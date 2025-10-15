@@ -1,0 +1,10 @@
+## obtener todas las canchas
+
+GET http://localhost:3000/api/canchas
+
+
+## obtener una cancha por id
+GET http://localhost:3000/api/canchas/1 
+
+
+
