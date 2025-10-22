@@ -1,0 +1,36 @@
+## obtener todas las canchas
+
+
+### Obtener todas las canchas
+GET http://localhost:3000/api/canchas
+
+### Crear nueva cancha
+POST http://localhost:3000/api/canchas
+Content-Type: application/json
+
+{
+    "id_cancha": 8,
+    "nombre": "Cancha Central",
+    "estado": "disponible"
+}
+
+### Modificar una cancha
+PUT http://localhost:3000/api/canchas/8
+Content-Type: application/json
+
+{
+    "nombre": "Cancha Modificada",
+    "estado": "ocupada"
+}
+
+### Modificar una cancha
+Patch http://localhost:3000/api/canchas/3
+Content-Type: application/json
+
+{
+    "estado": "ocupada"
+}
+
+
+### delete una cancha
+DELETE http://localhost:3000/api/canchas/2
