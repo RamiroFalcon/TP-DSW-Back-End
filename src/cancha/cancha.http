@@ -9,22 +9,22 @@ POST http://localhost:3000/api/canchas
 Content-Type: application/json
 
 {
-    "id_cancha": 8,
-    "nombre": "Cancha Central",
+    "id_cancha": 1,
+    "nombre": "Cancha Futbol 5",
     "estado": "disponible"
 }
 
 ### Modificar una cancha
-PUT http://localhost:3000/api/canchas/8
+PUT http://localhost:3000/api/canchas/2
 Content-Type: application/json
 
 {
-    "nombre": "Cancha Modificada",
+    "nombre": "Cancha Modificadaa",
     "estado": "ocupada"
 }
 
 ### Modificar una cancha
-Patch http://localhost:3000/api/canchas/3
+Patch http://localhost:3000/api/canchas/7
 Content-Type: application/json
 
 {
@@ -33,4 +33,4 @@ Content-Type: application/json
 
 
 ### delete una cancha
-DELETE http://localhost:3000/api/canchas/2
+DELETE http://localhost:3000/api/canchas/8

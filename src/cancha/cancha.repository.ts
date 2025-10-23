@@ -1,42 +1,54 @@
 import { Repository } from '../shared/repository.js'
 import { Cancha } from './cancha.entity.js'
+import { pool } from '../shared/db/conn.mysql.js';
 
-const canchas: Cancha[] = [
-    { id_cancha: 1, nombre: "Cancha 1", estado: "disponible" },
-    { id_cancha: 2, nombre: "Cancha 2", estado: "ocupada" },
-    { id_cancha: 3, nombre: "Cancha 3", estado: "mantenimiento" }
-];
 
 export class CanchaRepository implements Repository<Cancha> {
-    public findAll(): Cancha[] {
-        return canchas;
-    }
+    public async findAll(): Promise<Cancha[]> {
+    const [rows] = await pool.query('SELECT id_cancha, nombre, estado FROM canchas');
+    return rows as Cancha[];
+  }
 
-    public findOne(item: { id: number }): Cancha | undefined {
-        return canchas.find(c => c.id_cancha === item.id);
-    }
+  public async findOne(item: { id: number }): Promise<Cancha | undefined> {
+    const [rows] = await pool.query(
+    'SELECT id_cancha, nombre, estado FROM canchas WHERE id_cancha = ?',
+    [item.id]
+    );
+    const row = (rows as any[])[0];
+    return row ? (row as Cancha) : undefined;
+  }
 
-    public add(item: Cancha): Cancha {
-        canchas.push(item);
-        return item;
-    }
+  public async add(item: Cancha): Promise<Cancha | undefined> {
+    const [result] = await pool.query(
+    'INSERT INTO canchas (id_cancha, nombre, estado) VALUES (?, ?, ?)',
+    [item.id_cancha, item.nombre, item.estado]
+    );
+    // Si insertó, devolvés lo insertado (o lo buscás por ID si preferís)
+    // @ts-ignore (si tu TS se queja del tipo de result)
+    if (result.affectedRows > 0) return this.findOne({ id: item.id_cancha });
+    return undefined;
+  }
 
-    public update(item: Cancha): Cancha | undefined {
-        const canchaIdx = canchas.findIndex((cancha) => cancha.id_cancha === item.id_cancha);
-        if (canchaIdx === -1) {
-            return undefined;
-        }
-        canchas[canchaIdx] = { ...canchas[canchaIdx], ...item };
-        return canchas[canchaIdx];  
-    }
+  public async update(item: Cancha): Promise<Cancha | undefined> {
+    const [result] = await pool.query(
+    'UPDATE canchas SET nombre = ?, estado = ? WHERE id_cancha = ?',
+    [item.nombre, item.estado, item.id_cancha]
+    );
+    // @ts-ignore
+    if (result.affectedRows > 0) return this.findOne({ id: item.id_cancha });
+    return undefined;
+  }
 
-    public delete(item: { id: number }): Cancha | undefined {
-        const canchaIdx = canchas.findIndex((cancha) => cancha.id_cancha === item.id);
-        if (canchaIdx === -1) {
-            return undefined;
-        }
-        const deletedCancha = canchas[canchaIdx];
-        canchas.splice(canchaIdx, 1);
-        return deletedCancha;
-    }
+  public async delete(item: { id: number }): Promise<Cancha | undefined> {
+    const cancha = await this.findOne({ id: item.id });
+    if (!cancha) return undefined;
+
+    const [result] = await pool.query(
+      'DELETE FROM canchas WHERE id_cancha = ?',
+      [item.id]
+    );
+    // @ts-ignore
+    if (result.affectedRows > 0) return cancha;
+    return undefined;
+  }
 }
