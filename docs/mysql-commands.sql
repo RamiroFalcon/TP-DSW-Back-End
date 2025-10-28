@@ -2,6 +2,8 @@ CREATE DATABASE IF NOT EXISTS TurnoSport;
 
 use TurnoSport;
 
+
+
 CREATE TABLE localidades (
     id_localidad INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(120) NOT NULL

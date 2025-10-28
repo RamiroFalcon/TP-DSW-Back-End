@@ -1,0 +1,34 @@
+### Obtener todos los tipos de cancha
+GET http://localhost:3000/api/tipo-canchas
+
+### Obtener un tipo de cancha por ID
+GET http://localhost:3000/api/tipo-canchas/1
+
+### Crear nuevo tipo de cancha
+POST http://localhost:3000/api/tipo-canchas
+Content-Type: application/json
+
+{
+    "nombre": "Fútbol 11",
+    "deporte": "Fútbol"
+}
+
+### Modificar un tipo de cancha
+PUT http://localhost:3000/api/tipo-canchas/1
+Content-Type: application/json
+
+{
+    "nombre": "Fútbol 7",
+    "deporte": "Fútbol"
+}
+
+### Modificar parcialmente un tipo de cancha
+PATCH http://localhost:3000/api/tipo-canchas/1
+Content-Type: application/json
+
+{
+    "nombre": "Fútbol 8"
+}
+
+### Eliminar un tipo de cancha
+DELETE http://localhost:3000/api/tipo-canchas/1

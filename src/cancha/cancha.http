@@ -9,7 +9,7 @@ POST http://localhost:3000/api/canchas
 Content-Type: application/json
 
 {
-    "id_cancha": 1,
+    "id_cancha": 9,
     "nombre": "Cancha Futbol 5",
     "estado": "disponible"
 }
@@ -33,4 +33,4 @@ Content-Type: application/json
 
 
 ### delete una cancha
-DELETE http://localhost:3000/api/canchas/8
+DELETE http://localhost:3000/api/canchas/7
