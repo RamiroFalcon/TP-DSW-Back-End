@@ -44,7 +44,7 @@ CREATE TABLE tipo_canchas (
 
 -- Canchas
 CREATE TABLE canchas (
-    id_cancha INT AUTO_INCREMENT PRIMARY KEY,
+    id_cancha INT PRIMARY KEY,
     nombre VARCHAR(120) NOT NULL,
     estado ENUM('Disponible','Reservada','Mantenimiento') DEFAULT 'Disponible',
     id_tipo_cancha INT NOT NULL,

@@ -1,57 +1,102 @@
-import { Usuario, UsuarioCreate } from '../Usuario/Usuario.entity';
+import { Repository } from '../shared/repository.js'
+import { pool } from '../shared/db/conn.mysql.js'
+import { Usuario } from './usuario.entity.js'
+import { ResultSetHeader, RowDataPacket } from 'mysql2'
 
+export class UsuarioRepository implements Repository<Usuario> {
+    public async findAll(): Promise<Usuario[]> {
+        const [rows] = await pool.query('SELECT id_usuario, nombre, apellido, dni, telefono, email FROM usuarios')
+        return rows as Usuario[]
+    }
 
+    public async findOne(item: { id: number }): Promise<Usuario | undefined> {
+        const [rows] = await pool.query<RowDataPacket[]>(
+            'SELECT id_usuario, nombre, apellido, dni, telefono, email FROM usuarios WHERE id_usuario = ?',
+            [item.id]
+        )
+        if (rows.length === 0) {
+            return undefined
+        }
+        const row = rows[0]
+        return new Usuario(row.id_usuario, row.nombre, row.apellido, row.dni, row.telefono, row.email)
+    }
 
-export class UsuarioRepository {
-  private usuarios: Usuario[] = [];
-  private currentId: number = 1;
+    public async add(item: Usuario): Promise<Usuario | undefined> {
+        const [result] = await pool.query<ResultSetHeader>(
+            'INSERT INTO usuarios (nombre, apellido, dni, telefono, email) VALUES (?, ?, ?, ?, ?)',
+            [item.nombre, item.apellido, item.dni, item.telefono, item.email]
+        )
+        if (result.affectedRows === 1) {
+            item.id_usuario = result.insertId
+            return item
+        }
+        return undefined
+    }
 
-  create(data: UsuarioCreate): Usuario {
-    const nuevoUsuario: Usuario = {
-      id_usuario: this.currentId++,
-      dni: data.dni,
-      nombre: data.nombre,
-      apellido: data.apellido,
-      id_localidad: data.id_localidad,
-      rol: data.rol
-    };
-    this.usuarios.push(nuevoUsuario);
-    return nuevoUsuario;
-  }
+    public async update(item: Usuario): Promise<Usuario | undefined> {
+        const usuarioActual = await this.findOne({ id: item.id_usuario })
+        if (!usuarioActual) {
+            return undefined
+        }
 
-  findAll(): Usuario[] {
-    return this.usuarios;
-  }
+        const usuarioActualizado = {
+            ...usuarioActual,
+            ...(item.nombre !== undefined && { nombre: item.nombre }),
+            ...(item.apellido !== undefined && { apellido: item.apellido }),
+            ...(item.dni !== undefined && { dni: item.dni }),
+            ...(item.telefono !== undefined && { telefono: item.telefono }),
+            ...(item.email !== undefined && { email: item.email })
+        }
 
-  findById(id: number): Usuario | undefined {
-    return this.usuarios.find(user => user.id_usuario === id);
-  }
+        const [result] = await pool.query<ResultSetHeader>(
+            'UPDATE usuarios SET nombre = ?, apellido = ?, dni = ?, telefono = ?, email = ? WHERE id_usuario = ?',
+            [usuarioActualizado.nombre, usuarioActualizado.apellido, usuarioActualizado.dni, 
+             usuarioActualizado.telefono, usuarioActualizado.email, item.id_usuario]
+        )
+        
+        if (result.affectedRows === 1) {
+            return this.findOne({ id: item.id_usuario })
+        }
+        return undefined
+    }
 
-  findByDni(dni: string): Usuario | undefined {
-    return this.usuarios.find(user => user.dni === dni);
-  }
+    public async delete(item: { id: number }): Promise<Usuario | undefined> {
+        const usuarioToDelete = await this.findOne(item)
+        if (!usuarioToDelete) {
+            return undefined
+        }
+        const [result] = await pool.query<ResultSetHeader>(
+            'DELETE FROM usuarios WHERE id_usuario = ?',
+            [item.id]
+        )
+        if (result.affectedRows === 1) {
+            return usuarioToDelete
+        }
+        return undefined
+    }
 
-  findByLocalidad(id_localidad: number): Usuario[] {
-    return this.usuarios.filter(user => user.id_localidad === id_localidad);
-  }
+    // Métodos adicionales específicos
+    public async findByDni(dni: string): Promise<Usuario | undefined> {
+        const [rows] = await pool.query<RowDataPacket[]>(
+            'SELECT id_usuario, nombre, apellido, dni, telefono, email FROM usuarios WHERE dni = ?',
+            [dni]
+        )
+        if (rows.length === 0) {
+            return undefined
+        }
+        const row = rows[0]
+        return new Usuario(row.id_usuario, row.nombre, row.apellido, row.dni, row.telefono, row.email)
+    }
 
-  findByRol(rol: string): Usuario[] {
-    return this.usuarios.filter(user => user.rol === rol);
-  }
-
-  update(id: number, data: Partial<Usuario>): Usuario | null {
-    const index = this.usuarios.findIndex(user => user.id_usuario === id);
-    if (index === -1) return null;
-    
-    this.usuarios[index] = { ...this.usuarios[index], ...data };
-    return this.usuarios[index];
-  }
-
-  delete(id: number): boolean {
-    const index = this.usuarios.findIndex(user => user.id_usuario === id);
-    if (index === -1) return false;
-    
-    this.usuarios.splice(index, 1);
-    return true;
-  }
+    public async findByEmail(email: string): Promise<Usuario | undefined> {
+        const [rows] = await pool.query<RowDataPacket[]>(
+            'SELECT id_usuario, nombre, apellido, dni, telefono, email FROM usuarios WHERE email = ?',
+            [email]
+        )
+        if (rows.length === 0) {
+            return undefined
+        }
+        const row = rows[0]
+        return new Usuario(row.id_usuario, row.nombre, row.apellido, row.dni, row.telefono, row.email)
+    }
 }

@@ -11,26 +11,28 @@ Content-Type: application/json
 {
     "id_cancha": 9,
     "nombre": "Cancha Futbol 5",
-    "estado": "disponible"
+    "estado": "disponible",
+    "id_tipo_cancha": 2
 }
 
 ### Modificar una cancha
-PUT http://localhost:3000/api/canchas/2
+PUT http://localhost:3000/api/canchas/1
 Content-Type: application/json
 
 {
     "nombre": "Cancha Modificadaa",
-    "estado": "ocupada"
+    "estado": "reservada",
+    "id_tipo_cancha": 1
 }
 
 ### Modificar una cancha
-Patch http://localhost:3000/api/canchas/7
+Patch http://localhost:3000/api/canchas/12
 Content-Type: application/json
 
 {
-    "estado": "ocupada"
+    "estado": "mantenimiento"
 }
 
 
 ### delete una cancha
-DELETE http://localhost:3000/api/canchas/7
+DELETE http://localhost:3000/api/canchas/12

@@ -9,26 +9,26 @@ POST http://localhost:3000/api/tipo-canchas
 Content-Type: application/json
 
 {
-    "nombre": "Fútbol 11",
-    "deporte": "Fútbol"
+    "nombre": "Tenis Dobles",
+    "deporte": "Tenis"
 }
 
 ### Modificar un tipo de cancha
-PUT http://localhost:3000/api/tipo-canchas/1
+PUT http://localhost:3000/api/tipo-canchas/4
 Content-Type: application/json
 
 {
-    "nombre": "Fútbol 7",
-    "deporte": "Fútbol"
+    "nombre": "Tenis Singles",
+    "deporte": "Tenis"
 }
 
 ### Modificar parcialmente un tipo de cancha
-PATCH http://localhost:3000/api/tipo-canchas/1
+PATCH http://localhost:3000/api/tipo-canchas/4
 Content-Type: application/json
 
 {
-    "nombre": "Fútbol 8"
+    "nombre": "Tenis Singles"
 }
 
 ### Eliminar un tipo de cancha
-DELETE http://localhost:3000/api/tipo-canchas/1
+DELETE http://localhost:3000/api/tipo-canchas/4

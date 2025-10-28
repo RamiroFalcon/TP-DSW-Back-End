@@ -1,25 +1,14 @@
-import { Router } from 'express';
-import { ReservaController } from './reserva.controller';
-import { ReservaService } from './reserva';
-import { ReservaRepository } from './reserva.repository';
-import { CanchaRepository } from '../cancha/cancha.repository';
-import { UsuarioRepository } from '../Usuario/usuario.repository';
+import { Router } from 'express'
+import { sanitizeReservaInput, findAll, findOne, findByCancha, findByCliente, findByFecha, add, update, remove } from './reserva.controller.js'
 
-const router = Router();
+export const reservaRouter = Router()
 
-const canchaRepository = new CanchaRepository();
-const usuarioRepository = new UsuarioRepository();
-const repository = new ReservaRepository();
-const service = new ReservaService(repository, canchaRepository, usuarioRepository);
-const controller = new ReservaController(service);
-
-router.post('/reservas', controller.crear);
-router.get('/reservas', controller.obtenerTodas);
-router.get('/reservas/:id', controller.obtenerPorId);
-router.get('/reservas/cancha/:id_cancha', controller.obtenerPorCancha);
-router.get('/reservas/cliente/:id_cliente', controller.obtenerPorCliente);
-router.get('/reservas/fecha/:fecha', controller.obtenerPorFecha);
-router.put('/reservas/:id', controller.actualizar);
-router.delete('/reservas/:id', controller.eliminar);
-
-export default router;
+reservaRouter.get('/', findAll)
+reservaRouter.get('/:id', findOne)
+reservaRouter.get('/cancha/:id_cancha', findByCancha)
+reservaRouter.get('/cliente/:id_cliente', findByCliente)
+reservaRouter.get('/fecha/:fecha', findByFecha)
+reservaRouter.post('/', sanitizeReservaInput, add)
+reservaRouter.put('/:id', sanitizeReservaInput, update)
+reservaRouter.patch('/:id', sanitizeReservaInput, update)
+reservaRouter.delete('/:id', remove)

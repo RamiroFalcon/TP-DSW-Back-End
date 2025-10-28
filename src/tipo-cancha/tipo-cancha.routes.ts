@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { sanitizeTipoCanchaInput, findAll, findOne, add, update, remove } from './tipo-cancha.controler.js'
+import { sanitizeTipoCanchaInput, findAll, findOne, add, update, remove } from './tipo-cancha.controller.js'
 
 export const tipoCanchaRouter = Router()
 

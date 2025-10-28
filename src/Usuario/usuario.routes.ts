@@ -1,23 +1,13 @@
-import { Router } from 'express';
-import { UsuarioController } from './usuario.controller';
-import { UsuarioService } from './usuario';
-import { UsuarioRepository } from '../Usuario/usuario.repository';
-import { LocalidadRepository } from '../localidad/localidad.repository';
+import { Router } from 'express'
+import { sanitizeUsuarioInput, findAll, findOne, findByDni, findByEmail, add, update, remove } from './usuario.controller.js'
 
-const router = Router();
+export const usuarioRouter = Router()
 
-const localidadRepository = new LocalidadRepository();
-const repository = new UsuarioRepository();
-const service = new UsuarioService(repository, localidadRepository);
-const controller = new UsuarioController(service);
-
-router.post('/usuarios', controller.crear);
-router.get('/usuarios', controller.obtenerTodos);
-router.get('/usuarios/:id', controller.obtenerPorId);
-router.get('/usuarios/dni/:dni', controller.obtenerPorDni);
-router.get('/usuarios/localidad/:id_localidad', controller.obtenerPorLocalidad);
-router.get('/usuarios/rol/:rol', controller.obtenerPorRol);
-router.put('/usuarios/:id', controller.actualizar);
-router.delete('/usuarios/:id', controller.eliminar);
-
-export default router;
+usuarioRouter.get('/', findAll)
+usuarioRouter.get('/:id', findOne)
+usuarioRouter.get('/dni/:dni', findByDni)
+usuarioRouter.get('/email/:email', findByEmail)
+usuarioRouter.post('/', sanitizeUsuarioInput, add)
+usuarioRouter.put('/:id', sanitizeUsuarioInput, update)
+usuarioRouter.patch('/:id', sanitizeUsuarioInput, update)
+usuarioRouter.delete('/:id', remove)

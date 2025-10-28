@@ -1,20 +1,11 @@
-import { Router } from 'express';
-import { LocalidadController } from './localidad.controller';
-import { LocalidadService } from './localidad';
-import { LocalidadRepository } from './localidad.repository';
+import { Router } from 'express'
+import { sanitizeLocalidadInput, findAll, findOne, add, update, remove } from './localidad.controller.js'
 
-const router = Router();
+export const localidadRouter = Router()
 
-// Inyección de dependencias
-const repository = new LocalidadRepository();
-const service = new LocalidadService(repository);
-const controller = new LocalidadController(service);
-
-// Definir rutas
-router.post('/localidades', controller.crear);
-router.get('/localidades', controller.obtenerTodas);
-router.get('/localidades/:id', controller.obtenerPorId);
-router.put('/localidades/:id', controller.actualizar);
-router.delete('/localidades/:id', controller.eliminar);
-
-export default router;
+localidadRouter.get('/', findAll)
+localidadRouter.get('/:id', findOne)
+localidadRouter.post('/', sanitizeLocalidadInput, add)
+localidadRouter.put('/:id', sanitizeLocalidadInput, update)
+localidadRouter.patch('/:id', sanitizeLocalidadInput, update)
+localidadRouter.delete('/:id', remove)

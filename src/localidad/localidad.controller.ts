@@ -1,91 +1,119 @@
-import { Request, Response } from 'express';
-import { LocalidadService } from './localidad';
+import { Request, Response, NextFunction } from 'express'
+import { LocalidadRepository } from './localidad.repository.js'
+import { Localidad } from './localidad.entity.js'
 
-export class LocalidadController {
-  constructor(private service: LocalidadService) {}
+const repository = new LocalidadRepository()
 
-  // POST /api/localidades
-  crear = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const localidad = this.service.crearLocalidad(req.body);
-      res.status(201).json({
-        success: true,
-        data: localidad,
-        message: 'Localidad creada exitosamente'
-      });
-    } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Error al crear localidad'
-      });
+type SanitizedLocalidadInput = Partial<Localidad>
+
+function sanitizeLocalidadInput(req: Request, res: Response, next: NextFunction) {
+    if (!req.body) {
+        return res.status(400).send({ message: 'El body es requerido' })
     }
-  };
 
-  // GET /api/localidades
-  obtenerTodas = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const localidades = this.service.obtenerTodas();
-      res.status(200).json({
-        success: true,
-        data: localidades
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error al obtener localidades'
-      });
-    }
-  };
+    const sanitizedInput: SanitizedLocalidadInput = {}
 
-  // GET /api/localidades/:id
-  obtenerPorId = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const id = parseInt(req.params.id);
-      const localidad = this.service.obtenerPorId(id);
-      res.status(200).json({
-        success: true,
-        data: localidad
-      });
-    } catch (error) {
-      res.status(404).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Localidad no encontrada'
-      });
+    if (req.body.id_localidad) {
+        const id = Number(req.body.id_localidad)
+        if (isNaN(id)) {
+            return res.status(400).send({ message: 'El id_localidad debe ser un número' })
+        }
+        sanitizedInput.id_localidad = id
     }
-  };
 
-  // PUT /api/localidades/:id
-  actualizar = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const id = parseInt(req.params.id);
-      const localidad = this.service.actualizarLocalidad(id, req.body);
-      res.status(200).json({
-        success: true,
-        data: localidad,
-        message: 'Localidad actualizada exitosamente'
-      });
-    } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Error al actualizar localidad'
-      });
+    if (req.body.nombre) {
+        const nombre = req.body.nombre.trim()
+        if (nombre.length === 0) {
+            return res.status(400).send({ message: 'El nombre no puede estar vacío' })
+        }
+        sanitizedInput.nombre = nombre
     }
-  };
 
-  // DELETE /api/localidades/:id
-  eliminar = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const id = parseInt(req.params.id);
-      this.service.eliminarLocalidad(id);
-      res.status(200).json({
-        success: true,
-        message: 'Localidad eliminada exitosamente'
-      });
-    } catch (error) {
-      res.status(404).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Localidad no encontrada'
-      });
-    }
-  };
+    req.body.sanitizedInput = sanitizedInput
+    next()
 }
+
+async function findAll(req: Request, res: Response) {
+    const localidades = await repository.findAll()
+    res.json({ data: localidades })
+}
+
+async function findOne(req: Request, res: Response) {
+    const id = Number(req.params.id)
+    if (isNaN(id)) {
+        return res.status(400).send({ message: 'id inválido' })
+    }
+
+    const localidad = await repository.findOne({ id })
+    if (!localidad) {
+        return res.status(404).send({ message: 'Localidad no encontrada' })
+    }
+
+    res.json({ data: localidad })
+}
+
+async function add(req: Request, res: Response) {
+    const input = req.body.sanitizedInput as SanitizedLocalidadInput
+
+    if (!input.nombre) {
+        return res.status(400).send({ message: 'nombre es requerido' })
+    }
+
+    const localidad = new Localidad(0, input.nombre)
+    const localidadCreada = await repository.add(localidad)
+
+    if (!localidadCreada) {
+        return res.status(500).send({ message: 'Error al crear localidad' })
+    }
+
+    return res.status(201).send({ message: 'Localidad creada', data: localidadCreada })
+}
+
+async function update(req: Request, res: Response) {
+    const id = Number(req.params.id)
+    if (isNaN(id)) {
+        return res.status(400).send({ message: 'id inválido' })
+    }
+
+    const input = req.body.sanitizedInput as SanitizedLocalidadInput
+    
+    const localidadToUpdate = {
+        id_localidad: id,
+        ...(input.nombre !== undefined && { nombre: input.nombre })
+    } as Localidad
+
+    const localidad = await repository.update(localidadToUpdate)
+
+    if (!localidad) {
+        return res.status(404).send({ message: 'Localidad no encontrada' })
+    }
+
+    return res.status(200).send({ message: 'Localidad actualizada', data: localidad })
+}
+
+async function remove(req: Request, res: Response) {
+    const id = Number(req.params.id)
+    if (isNaN(id)) {
+        return res.status(400).send({ message: 'id inválido' })
+    }
+
+    try {
+        const localidad = await repository.delete({ id })
+
+        if (!localidad) {
+            return res.status(404).send({ message: 'Localidad no encontrada' })
+        }
+
+        return res.status(200).send({ message: 'Localidad eliminada', data: localidad })
+    } catch (error: any) {
+        if (error.code === 'ER_ROW_IS_REFERENCED_2') {
+            return res.status(409).send({ 
+                message: 'No se puede eliminar la localidad porque hay clientes asociados a ella',
+                error: 'Elimina primero los clientes asociados o asígnalos a otra localidad'
+            })
+        }
+        return res.status(500).send({ message: 'Error al eliminar localidad', error: error.message })
+    }
+}
+
+export { sanitizeLocalidadInput, findAll, findOne, add, update, remove }

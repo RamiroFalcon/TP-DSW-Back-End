@@ -1,0 +1,51 @@
+### Obtener todas las reservas
+GET http://localhost:3000/api/reservas
+
+### Obtener una reserva por ID
+GET http://localhost:3000/api/reservas/1
+
+### Obtener reservas por cancha
+GET http://localhost:3000/api/reservas/cancha/1
+
+### Obtener reservas por cliente
+GET http://localhost:3000/api/reservas/cliente/1
+
+### Obtener reservas por fecha
+GET http://localhost:3000/api/reservas/fecha/2025-10-30
+
+### Crear nueva reserva
+POST http://localhost:3000/api/reservas
+Content-Type: application/json
+
+{
+    "id_cancha": 1,
+    "id_cliente": 1,
+    "fecha": "2025-10-30",
+    "hora_inicio": "14:00:00",
+    "duracion": 2,
+    "total_reserva": 5000
+}
+
+### Modificar una reserva
+PUT http://localhost:3000/api/reservas/1
+Content-Type: application/json
+
+{
+    "id_cancha": 1,
+    "id_cliente": 1,
+    "fecha": "2025-10-31",
+    "hora_inicio": "16:00:00",
+    "duracion": 3,
+    "total_reserva": 7500
+}
+
+### Modificar parcialmente una reserva
+PATCH http://localhost:3000/api/reservas/1
+Content-Type: application/json
+
+{
+    "total_reserva": 6000
+}
+
+### Eliminar una reserva
+DELETE http://localhost:3000/api/reservas/1
