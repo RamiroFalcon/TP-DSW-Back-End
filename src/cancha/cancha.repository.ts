@@ -1,74 +1,39 @@
-import { Repository } from '../shared/repository.js'
-import { pool } from '../shared/db/conn.mysql.js'
-import { Cancha } from './cancha.entity.js'
-import { ResultSetHeader, RowDataPacket } from 'mysql2'
+import { pool } from '../database/connection';
+import { Cancha, CanchaCreate, CanchaUpdate } from './cancha.entity';
+import { ResultSetHeader } from 'mysql2';
 
-export class CanchaRepository implements Repository<Cancha> {
-    public async findAll(): Promise<Cancha[]> {
-        const [rows] = await pool.query('SELECT id_cancha, nombre, estado, id_tipo_cancha FROM canchas')
-        return rows as Cancha[]
-    }
+export class CanchaRepository {
+  async findAll(): Promise<Cancha[]> {
+    const [rows] = await pool.query('SELECT * FROM cancha');
+    return rows as Cancha[];
+  }
 
-    public async findOne(item: { id: number }): Promise<Cancha | undefined> {
-        const [rows] = await pool.query<RowDataPacket[]>(
-            'SELECT id_cancha, nombre, estado, id_tipo_cancha FROM canchas WHERE id_cancha = ?',
-            [item.id]
-        )
-        if (rows.length === 0) {
-            return undefined
-        }
-        const row = rows[0]
-        return new Cancha(row.id_cancha, row.nombre, row.estado, row.id_tipo_cancha)
-    }
+  async findById(id: number): Promise<Cancha | null> {
+    const [rows] = await pool.query('SELECT * FROM cancha WHERE id = ?', [id]);
+    const canchas = rows as Cancha[];
+    return canchas.length ? canchas[0] : null;
+  }
 
-    public async add(item: Cancha): Promise<Cancha | undefined> {
-        const [result] = await pool.query<ResultSetHeader>(
-            'INSERT INTO canchas (nombre, estado, id_tipo_cancha) VALUES (?, ?, ?)',
-            [item.nombre, item.estado, item.id_tipo_cancha]
-        )
-        if (result.affectedRows === 1) {
-            item.id_cancha = result.insertId
-            return item
-        }
-        return undefined
-    }
+  async findByTipo(id_tipo: number): Promise<Cancha[]> {
+    const [rows] = await pool.query('SELECT * FROM cancha WHERE id_tipo = ?', [id_tipo]);
+    return rows as Cancha[];
+  }
 
-    public async update(item: Cancha): Promise<Cancha | undefined> {
-        const canchaActual = await this.findOne({ id: item.id_cancha })
-        if (!canchaActual) {
-            return undefined
-        }
+  async create(data: CanchaCreate): Promise<Cancha> {
+    const [result] = await pool.query<ResultSetHeader>(
+      'INSERT INTO cancha (nombre, id_tipo, id_localidad, precio) VALUES (?, ?, ?, ?)',
+      [data.nombre, data.id_tipo, data.id_localidad, data.precio]
+    );
+    const insertedId = result.insertId;
+    return { id: insertedId, ...data };
+  }
 
-        const canchaActualizada = {
-            ...canchaActual,
-            ...(item.nombre !== undefined && { nombre: item.nombre }),
-            ...(item.estado !== undefined && { estado: item.estado }),
-            ...(item.id_tipo_cancha !== undefined && { id_tipo_cancha: item.id_tipo_cancha })
-        }
+  async update(id: number, data: CanchaUpdate): Promise<void> {
+    await pool.query('UPDATE cancha SET ? WHERE id = ?', [data, id]);
+  }
 
-        const [result] = await pool.query<ResultSetHeader>(
-            'UPDATE canchas SET nombre = ?, estado = ?, id_tipo_cancha = ? WHERE id_cancha = ?',
-            [canchaActualizada.nombre, canchaActualizada.estado, canchaActualizada.id_tipo_cancha, item.id_cancha]
-        )
-        
-        if (result.affectedRows === 1) {
-            return this.findOne({ id: item.id_cancha })
-        }
-        return undefined
-    }
-
-    public async delete(item: { id: number }): Promise<Cancha | undefined> {
-        const canchaToDelete = await this.findOne(item)
-        if (!canchaToDelete) {
-            return undefined
-        }
-        const [result] = await pool.query<ResultSetHeader>(
-            'DELETE FROM canchas WHERE id_cancha = ?',
-            [item.id]
-        )
-        if (result.affectedRows === 1) {
-            return canchaToDelete
-        }
-        return undefined
-    }
+  async delete(id: number): Promise<void> {
+    await pool.query('DELETE FROM cancha WHERE id = ?', [id]);
+  }
 }
+

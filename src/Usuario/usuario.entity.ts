@@ -1,10 +1,33 @@
-export class Usuario {
-    constructor(
-        public id_usuario: number,
-        public nombre: string,
-        public apellido: string,
-        public dni: string,
-        public telefono: string,
-        public email: string
-    ) {}
+// Enum para rol de usuariexport type RolUsuario = 'cliente' | 'administrador';
+export enum RolUsuario {
+  CLIENTE = 'cliente',
+  ADMINISTRADOR = 'administrador'
+}
+
+
+
+export interface Usuario {
+  id_usuario: number;
+  dni: number;
+  nombre: string;
+  apellido: string;
+  rol: RolUsuario;
+  id_localidad: number;
+}
+
+export interface UsuarioCreate {
+  dni: number;
+  nombre: string;
+  apellido: string;
+  rol: RolUsuario;
+  id_localidad: number;
+}
+
+export interface UsuarioUpdate {
+  id_usuario: number;
+  dni?: number;
+  nombre?: string;
+  apellido?: string;
+  rol?: RolUsuario;
+  id_localidad?: number;
 }

@@ -1,90 +1,85 @@
 import { Request, Response } from 'express';
-import { LocalidadService } from './Localidad';
+import { TipoCanchaService } from './tipo-cancha';
 
-export class LocalidadController {
-  constructor(private service: LocalidadService) {}
+export class TipoCanchaController {
+  constructor(private service: TipoCanchaService) {}
 
-  // POST /api/localidades
   crear = async (req: Request, res: Response): Promise<void> => {
     try {
-      const localidad = this.service.crearLocalidad(req.body);
+      const tipoCancha = this.service.crearTipoCancha(req.body);
       res.status(201).json({
         success: true,
-        data: localidad,
-        message: 'Localidad creada exitosamente'
+        data: tipoCancha,
+        message: 'Tipo de cancha creado exitosamente'
       });
     } catch (error) {
       res.status(400).json({
         success: false,
-        message: error instanceof Error ? error.message : 'Error al crear localidad'
+        message: error instanceof Error ? error.message : 'Error al crear tipo de cancha'
       });
     }
   };
 
-  // GET /api/localidades
-  obtenerTodas = async (req: Request, res: Response): Promise<void> => {
+  obtenerTodos = async (req: Request, res: Response): Promise<void> => {
     try {
-      const localidades = this.service.obtenerTodas();
+      const tipos = this.service.obtenerTodos();
       res.status(200).json({
         success: true,
-        data: localidades
+        data: tipos
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Error al obtener localidades'
+        message: 'Error al obtener tipos de cancha'
       });
     }
   };
 
-  // GET /api/localidades/:id
   obtenerPorId = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = parseInt(req.params.id);
-      const localidad = this.service.obtenerPorId(id);
+      const tipo = this.service.obtenerPorId(id);
       res.status(200).json({
         success: true,
-        data: localidad
+        data: tipo
       });
     } catch (error) {
       res.status(404).json({
         success: false,
-        message: error instanceof Error ? error.message : 'Localidad no encontrada'
+        message: error instanceof Error ? error.message : 'Tipo de cancha no encontrado'
       });
     }
   };
 
-  // PUT /api/localidades/:id
   actualizar = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = parseInt(req.params.id);
-      const localidad = this.service.actualizarLocalidad(id, req.body);
+      const tipo = this.service.actualizarTipoCancha(id, req.body);
       res.status(200).json({
         success: true,
-        data: localidad,
-        message: 'Localidad actualizada exitosamente'
+        data: tipo,
+        message: 'Tipo de cancha actualizado exitosamente'
       });
     } catch (error) {
       res.status(400).json({
         success: false,
-        message: error instanceof Error ? error.message : 'Error al actualizar localidad'
+        message: error instanceof Error ? error.message : 'Error al actualizar tipo de cancha'
       });
     }
   };
 
-  // DELETE /api/localidades/:id
   eliminar = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = parseInt(req.params.id);
-      this.service.eliminarLocalidad(id);
+      this.service.eliminarTipoCancha(id);
       res.status(200).json({
         success: true,
-        message: 'Localidad eliminada exitosamente'
+        message: 'Tipo de cancha eliminado exitosamente'
       });
     } catch (error) {
       res.status(404).json({
         success: false,
-        message: error instanceof Error ? error.message : 'Localidad no encontrada'
+        message: error instanceof Error ? error.message : 'Tipo de cancha no encontrado'
       });
     }
   };

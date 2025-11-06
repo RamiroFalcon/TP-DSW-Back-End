@@ -1,13 +1,21 @@
-import { Router } from 'express'
-import { sanitizeUsuarioInput, findAll, findOne, findByDni, findByEmail, add, update, remove } from './usuario.controller.js'
+import { Router } from 'express';
+import { UsuarioController } from './usuario.controller';
+import { UsuarioService } from '../usuario/usuario';
+import { UsuarioRepository } from './usuario.repository';
 
-export const usuarioRouter = Router()
+const router = Router();
 
-usuarioRouter.get('/', findAll)
-usuarioRouter.get('/:id', findOne)
-usuarioRouter.get('/dni/:dni', findByDni)
-usuarioRouter.get('/email/:email', findByEmail)
-usuarioRouter.post('/', sanitizeUsuarioInput, add)
-usuarioRouter.put('/:id', sanitizeUsuarioInput, update)
-usuarioRouter.patch('/:id', sanitizeUsuarioInput, update)
-usuarioRouter.delete('/:id', remove)
+const repository = new UsuarioRepository();
+const service = new UsuarioService(repository);
+const controller = new UsuarioController(service);
+
+router.post('/', controller.crear);
+router.get('/', controller.obtenerTodos);
+router.get('/id/:id_usuario', controller.obtenerPorId);
+router.get('/dni/:dni', controller.obtenerPorDni);
+router.get('/rol/:rol', controller.obtenerPorRol);
+router.put('/:id_usuario', controller.actualizar);
+router.delete('/:id_usuario', controller.eliminar);
+
+
+export default router;

@@ -1,14 +1,18 @@
-import { Router } from 'express'
-import { sanitizeReservaInput, findAll, findOne, findByCancha, findByCliente, findByFecha, add, update, remove } from './reserva.controller.js'
+import { Router } from 'express';
+import { ReservaController } from '../reserva/reserva.cotroller';
 
-export const reservaRouter = Router()
+const router = Router();
+const controller = new ReservaController();
 
-reservaRouter.get('/', findAll)
-reservaRouter.get('/:id', findOne)
-reservaRouter.get('/cancha/:id_cancha', findByCancha)
-reservaRouter.get('/cliente/:id_cliente', findByCliente)
-reservaRouter.get('/fecha/:fecha', findByFecha)
-reservaRouter.post('/', sanitizeReservaInput, add)
-reservaRouter.put('/:id', sanitizeReservaInput, update)
-reservaRouter.patch('/:id', sanitizeReservaInput, update)
-reservaRouter.delete('/:id', remove)
+router.post('/', (req, res) => controller.crearReserva(req, res));
+router.get('/', (req, res) => controller.obtenerTodas(req, res));
+router.get('/:id_reserva/servicios', (req, res) => controller.obtenerServicios(req, res));
+router.get('/:id', (req, res) => controller.obtenerPorId(req, res));
+router.put('/:id', (req, res) => controller.actualizarReserva(req, res));
+router.delete('/:id', (req, res) => controller.eliminarReserva(req, res));
+
+// Servicios
+router.post('/:id/servicios', (req, res) => controller.agregarServicios(req, res));
+router.delete('/:id/servicios/:id_servicio', (req, res) => controller.eliminarServicio(req, res));
+
+export default router;

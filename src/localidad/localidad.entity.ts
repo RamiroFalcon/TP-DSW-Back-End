@@ -1,7 +1,13 @@
-export class Localidad {
-    constructor(
-        public id_localidad: number,
-        public nombre: string
-    ) {}
+
+export interface Localidad {
+  id: number;
+  nombre: string;
 }
 
+export interface LocalidadCreate {
+  nombre: string;
+}
+
+export interface LocalidadUpdate {
+  nombre?: string;
+}

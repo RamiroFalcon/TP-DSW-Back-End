@@ -1,0 +1,14 @@
+// Obtener todos los precios de una cancha
+
+GET → http://localhost:3000/precios/cancha/1
+
+//Obtener el ultimo preico (Precio vigente)
+
+GET → http://localhost:3000/precios/actual/1
+
+//Actualizar un precio
+
+PUT → http://localhost:3000/precios/2
+
+//Eliminar un precio
+DELETE → http://localhost:3000/precios/3

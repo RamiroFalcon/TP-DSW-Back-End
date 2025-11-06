@@ -1,8 +1,21 @@
-export class Cancha {
-    constructor(
-        public id_cancha: number,
-        public nombre: string,
-        public estado: 'disponible' | 'reservada' | 'mantenimiento',
-        public id_tipo_cancha: number
-    ) {}
+export interface Cancha {
+  id: number;
+  nombre: string;
+  id_tipo: number;
+  id_localidad: number;
+  precio: number;
+}
+
+export interface CanchaCreate {
+  nombre: string;
+  id_tipo: number;
+  id_localidad: number;
+  precio: number;
+}
+
+export interface CanchaUpdate {
+  nombre?: string;
+  id_tipo?: number;
+  id_localidad?: number;
+  precio?: number;
 }
