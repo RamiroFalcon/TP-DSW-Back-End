@@ -29,6 +29,8 @@ async obtenerPorRol(rol: RolUsuario): Promise<Usuario[]> {
   }
 
  async actualizar(id: number, datos: UsuarioUpdate): Promise<Usuario> {
+    const usuarioExistente = await this.repository.findById(id);
+    if (!usuarioExistente) throw new Error('Usuario no encontrado');
     return this.repository.update(id, datos);
   }
 

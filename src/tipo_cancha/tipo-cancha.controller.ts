@@ -1,86 +1,54 @@
 import { Request, Response } from 'express';
 import { TipoCanchaService } from './tipo-cancha';
+import { TipoCanchaRepository } from './tipo-cancha.repository';
 
-export class TipoCanchaController {
-  constructor(private service: TipoCanchaService) {}
+const repository = new TipoCanchaRepository();
+const service = new TipoCanchaService(repository);
 
-  crear = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const tipoCancha = this.service.crearTipoCancha(req.body);
-      res.status(201).json({
-        success: true,
-        data: tipoCancha,
-        message: 'Tipo de cancha creado exitosamente'
-      });
-    } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Error al crear tipo de cancha'
-      });
-    }
-  };
+export async function obtenerTodos(req: Request, res: Response) {
+  try {
+    const tipos = await service.obtenerTodos();
+    res.json({ success: true, data: tipos });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
 
-  obtenerTodos = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const tipos = this.service.obtenerTodos();
-      res.status(200).json({
-        success: true,
-        data: tipos
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: 'Error al obtener tipos de cancha'
-      });
-    }
-  };
+export async function obtenerPorId(req: Request, res: Response) {
+  try {
+    const id = parseInt(req.params.id);
+    const tipo = await service.obtenerPorId(id);
+    res.json({ success: true, data: tipo });
+  } catch (error: any) {
+    res.status(404).json({ success: false, message: error.message });
+  }
+}
 
-  obtenerPorId = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const id = parseInt(req.params.id);
-      const tipo = this.service.obtenerPorId(id);
-      res.status(200).json({
-        success: true,
-        data: tipo
-      });
-    } catch (error) {
-      res.status(404).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Tipo de cancha no encontrado'
-      });
-    }
-  };
+export async function crear(req: Request, res: Response) {
+  try {
+    const nuevoTipo = await service.crearTipoCancha(req.body);
+    res.status(201).json({ success: true, data: nuevoTipo });
+  } catch (error: any) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+}
 
-  actualizar = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const id = parseInt(req.params.id);
-      const tipo = this.service.actualizarTipoCancha(id, req.body);
-      res.status(200).json({
-        success: true,
-        data: tipo,
-        message: 'Tipo de cancha actualizado exitosamente'
-      });
-    } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Error al actualizar tipo de cancha'
-      });
-    }
-  };
+export async function actualizar(req: Request, res: Response) {
+  try {
+    const id = parseInt(req.params.id);
+    const tipoActualizado = await service.actualizarTipoCancha(id, req.body);
+    res.json({ success: true, data: tipoActualizado });
+  } catch (error: any) {
+    res.status(404).json({ success: false, message: error.message });
+  }
+}
 
-  eliminar = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const id = parseInt(req.params.id);
-      this.service.eliminarTipoCancha(id);
-      res.status(200).json({
-        success: true,
-        message: 'Tipo de cancha eliminado exitosamente'
-      });
-    } catch (error) {
-      res.status(404).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Tipo de cancha no encontrado'
-      });
-    }
-  };
+export async function eliminar(req: Request, res: Response) {
+  try {
+    const id = parseInt(req.params.id);
+    await service.eliminarTipoCancha(id);
+    res.json({ success: true, message: 'Tipo de cancha eliminado' });
+  } catch (error: any) {
+    res.status(404).json({ success: false, message: error.message });
+  }
 }

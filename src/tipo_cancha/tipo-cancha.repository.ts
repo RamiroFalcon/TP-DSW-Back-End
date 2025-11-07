@@ -1,40 +1,48 @@
+import { pool } from '../database/connection';
 import { TipoCancha, TipoCanchaCreate } from './tipo-cancha.entity';
+import { ResultSetHeader } from 'mysql2';
 
 export class TipoCanchaRepository {
-  private tiposCanchas: TipoCancha[] = [];
-  private currentId: number = 1;
-
-  create(data: TipoCanchaCreate): TipoCancha {
-    const nuevoTipo: TipoCancha = {
-      id_tipo: this.currentId++,
-      nombre: data.nombre,
-      deporte: data.deporte
-    };
-    this.tiposCanchas.push(nuevoTipo);
-    return nuevoTipo;
+  async findAll(): Promise<TipoCancha[]> {
+    const [rows] = await pool.query('SELECT * FROM tipocancha');
+    return rows as TipoCancha[];
   }
 
-  findAll(): TipoCancha[] {
-    return this.tiposCanchas;
+  async findById(id_tipo: number): Promise<TipoCancha | null> {
+    const [rows] = await pool.query('SELECT * FROM tipocancha WHERE id_tipo = ?', [id_tipo]);
+    const tipos = rows as TipoCancha[];
+    return tipos.length ? tipos[0] : null;
   }
 
-  findById(id: number): TipoCancha | undefined {
-    return this.tiposCanchas.find(tipo => tipo.id_tipo === id);
+  async create(data: TipoCanchaCreate): Promise<TipoCancha> {
+    const [result] = await pool.query<ResultSetHeader>(
+      'INSERT INTO tipocancha (nombre, deporte) VALUES (?, ?)',
+      [data.nombre, data.deporte]
+    );
+    const insertedId = result.insertId;
+    return { id_tipo: insertedId, ...data };
   }
 
-  update(id: number, data: Partial<TipoCancha>): TipoCancha | null {
-    const index = this.tiposCanchas.findIndex(tipo => tipo.id_tipo === id);
-    if (index === -1) return null;
-    
-    this.tiposCanchas[index] = { ...this.tiposCanchas[index], ...data };
-    return this.tiposCanchas[index];
+  async update(id: number, datos: Partial<TipoCancha>): Promise<TipoCancha> {
+    const [result] = await pool.query(
+      'UPDATE tipocancha SET ? WHERE id_tipo = ?',
+      [datos, id]
+    );
+
+    // @ts-ignore
+    if ((result as any).affectedRows === 0) {
+      throw new Error('Tipo de cancha no encontrado');
+    }
+
+    const [rows] = await pool.query(
+      'SELECT * FROM tipocancha WHERE id_tipo = ?',
+      [id]
+    );
+
+    return (rows as TipoCancha[])[0];
   }
 
-  delete(id: number): boolean {
-    const index = this.tiposCanchas.findIndex(tipo => tipo.id_tipo === id);
-    if (index === -1) return false;
-    
-    this.tiposCanchas.splice(index, 1);
-    return true;
+  async delete(id_tipo: number): Promise<void> {
+    await pool.query('DELETE FROM tipocancha WHERE id_tipo = ?', [id_tipo]);
   }
 }

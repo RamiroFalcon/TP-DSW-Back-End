@@ -15,6 +15,7 @@ router.get('/id/:id_usuario', controller.obtenerPorId);
 router.get('/dni/:dni', controller.obtenerPorDni);
 router.get('/rol/:rol', controller.obtenerPorRol);
 router.put('/:id_usuario', controller.actualizar);
+router.patch('/:id_usuario', controller.actualizar);
 router.delete('/:id_usuario', controller.eliminar);
 
 

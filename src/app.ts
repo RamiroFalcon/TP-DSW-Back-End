@@ -2,7 +2,7 @@ import express from 'express';
 import canchaRouter from './cancha/cancha.routes.js';
 import usuarioRouter from './usuario/usuario.routes.js';
 import tipoCanchaRouter from './tipo_cancha/tipo-cancha.routes.js';
-import localidadRouter from './Localidad/localidad.routes.js';
+import localidadRouter from './localidad/localidad.routes.js';
 import reservaRouter from './reserva/reserva.routes.js';
 import precioRoutes from './precio/precio.routes';
 import servicioRoutes from './servicio/servicio.routes';

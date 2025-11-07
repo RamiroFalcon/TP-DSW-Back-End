@@ -3,11 +3,11 @@ POST http://localhost:3000/api/usuarios
 Content-Type: application/json
 
 {
-  "dni": "12345678",
-  "nombre": "Juan",
-  "apellido": "Pérez",
+  "dni": "123456789",
+  "nombre": "Juan Roman",
+  "apellido": "Riquelme",
   "id_localidad": 1,
-  "rol": "cliente"
+  "rol": "Administrador"
 }
 
 ### Crear Usuario Cliente 2
@@ -50,7 +50,7 @@ Content-Type: application/json
 GET http://localhost:3000/api/usuarios
 
 ### Obtener Usuario por ID
-GET http://localhost:3000/api/usuarios/1
+GET http://localhost:3000/api/usuarios/id/2
 
 ### Obtener Usuario por DNI
 GET http://localhost:3000/api/usuarios/dni/12345678
@@ -63,16 +63,16 @@ GET http://localhost:3000/api/usuarios/rol/cliente
 GET http://localhost:3000/api/usuarios/rol/administrador
 
 ### Actualizar Usuario
-PUT http://localhost:3000/api/usuarios/1
+PUT http://localhost:3000/api/usuarios/6
 Content-Type: application/json
 
 {
-  "nombre": "Juan Carlos",
-  "apellido": "Pérez López"
+  "nombre": "Martin",
+  "apellido": "Palermo"
 }
 
 ### Actualizar Usuario (cambiar localidad)
-PUT http://localhost:3000/api/usuarios/2
+PATCH http://localhost:3000/api/usuarios/6
 Content-Type: application/json
 
 {
@@ -80,4 +80,4 @@ Content-Type: application/json
 }
 
 ### Eliminar Usuario
-DELETE http://localhost:3000/api/usuarios/4
+DELETE http://localhost:3000/api/usuarios/6

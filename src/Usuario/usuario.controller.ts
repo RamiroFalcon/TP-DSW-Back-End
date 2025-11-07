@@ -82,15 +82,21 @@ export class UsuarioController {
 
 
   actualizar = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const id = Number(req.params.id);
-    const datos = req.body; // Debe coincidir con UsuarioUpdate
-    const usuarioActualizado = await this.service.actualizar(id, datos);
-    res.json({ success: true, data: usuarioActualizado });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Error al actualizar usuario' });
-  }
-};
+    try {
+      const id_usuario = parseInt(req.params.id_usuario);
+      const usuarioActualizado = await this.service.actualizar(id_usuario, req.body);
+      res.status(200).json({
+        success: true,
+        data: usuarioActualizado,
+        message: 'Usuario actualizado exitosamente'
+      });
+    } catch (error) {
+      res.status(404).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Error al actualizar usuario'
+      });
+    }
+  };
 
   eliminar = async (req: Request, res: Response): Promise<void> => {
     try {

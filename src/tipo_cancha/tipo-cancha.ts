@@ -34,10 +34,12 @@ export class TipoCanchaService {
     return tipo;
   }
 
-  async eliminarTipoCancha(id: number): Promise<void> {
-    const eliminado = await this.repository.delete(id);
-    if (!eliminado) {
-      throw new Error(`Tipo de cancha con id ${id} no encontrado`);
-    }
+async eliminarTipoCancha(id: number): Promise<void> {
+  const tipo = await this.repository.findById(id);
+  if (!tipo) {
+    throw new Error(`Tipo de cancha con id ${id} no encontrado`);
   }
+  await this.repository.delete(id);
+} 
+
 }
