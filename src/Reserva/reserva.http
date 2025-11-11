@@ -15,6 +15,10 @@ Content-Type: application/json
 ### Obtener todas las reservas con servicios
 GET http://localhost:3000/api/reservas
 
+
+GET http://localhost:3000/api/reservas/rango-fecha?inicio=YYYY-MM-DD&fin=YYYY-MM-DD
+
+
 ### Obtener reserva por ID
 GET http://localhost:3000/api/reservas/1
 

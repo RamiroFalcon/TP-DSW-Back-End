@@ -1,12 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import canchaRouter from './cancha/cancha.routes.js';
-import usuarioRouter from './usuario/usuario.routes.js';
+import usuarioRouter from './Usuario/usuario.routes.js';
 import tipoCanchaRouter from './tipo_cancha/tipo-cancha.routes.js';
 import localidadRouter from './localidad/localidad.routes.js';
-import reservaRouter from './reserva/reserva.routes.js';
-import precioRoutes from './precio/precio.routes';
-import servicioRoutes from './servicio/servicio.routes';
+import reservaRouter from './Reserva/reserva.routes.js';
+import precioRoutes from './precio/precio.routes.js';
+import servicioRoutes from './servicio/servicio.routes.js';
 import reservaServicioRoutes from './reserva-servicio/reserva-servicio.routes.js';
 import authRouter from './auth/auth.routes.js';
 

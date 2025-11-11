@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { LocalidadController } from './localidad.controller';
-import { LocalidadService } from './Localidad';
-import { LocalidadRepository } from './localidad.repository';
+import { LocalidadController } from './localidad.controller.js';
+import { LocalidadService } from './localidad.js';
+import { LocalidadRepository } from './Localidad.repository.js';
 
 const router = Router();
 
@@ -10,11 +10,11 @@ const repository = new LocalidadRepository();
 const service = new LocalidadService(repository);
 const controller = new LocalidadController(service);
 
-// Definir rutas
-router.post('/localidades', controller.crear);
-router.get('/localidades', controller.obtenerTodas);
-router.get('/localidades/:id', controller.obtenerPorId);
-router.put('/localidades/:id', controller.actualizar);
-router.delete('/localidades/:id', controller.eliminar);
+// ✅ Rutas sin el prefijo "/localidades"
+router.post('/', controller.crear);
+router.get('/', controller.obtenerTodas);
+router.get('/:id', controller.obtenerPorId);
+router.put('/:id', controller.actualizar);
+router.delete('/:id', controller.eliminar);
 
 export default router;
