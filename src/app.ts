@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import canchaRouter from './cancha/cancha.routes.js';
 import usuarioRouter from './usuario/usuario.routes.js';
 import tipoCanchaRouter from './tipo_cancha/tipo-cancha.routes.js';
@@ -12,6 +13,7 @@ import authRouter from './auth/auth.routes.js';
 
 const app = express();
 app.use(express.json());
+app.use(cors()); 
 
 // ✅ Montar rutas principales (sin volver a escribir /api adentro del router)
 app.use('/api/canchas', canchaRouter);
@@ -19,8 +21,8 @@ app.use('/api/usuarios', usuarioRouter);
 app.use('/api/tipo-canchas', tipoCanchaRouter);
 app.use('/api/localidades', localidadRouter);
 app.use('/api/reservas', reservaRouter);
-app.use('/precios', precioRoutes);
-app.use('/servicios', servicioRoutes);
+app.use('/api/precios', precioRoutes);
+app.use('/api/servicios', servicioRoutes);
 app.use('/reserva-servicio', reservaServicioRoutes);
 app.use('/api/auth', authRouter);
 
