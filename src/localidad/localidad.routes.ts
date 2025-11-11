@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { LocalidadController } from './Localidad.controller';
+import { LocalidadController } from './localidad.controller';
 import { LocalidadService } from './Localidad';
-import { LocalidadRepository } from './Localidad.repository';
+import { LocalidadRepository } from './localidad.repository';
 
 const router = Router();
 

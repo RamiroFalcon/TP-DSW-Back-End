@@ -9,6 +9,12 @@ export class UsuarioRepository {
     return rows as Usuario[];
   }
 
+  async findByUsername(username: string): Promise<Usuario | null> {
+  const [rows] = await pool.query('SELECT * FROM usuario WHERE username = ?', [username]);
+  const usuarios = rows as Usuario[];
+  return usuarios.length ? usuarios[0] : null;
+  }
+
   async findById(id_usuario: number): Promise<Usuario | null> {
     const [rows] = await pool.query('SELECT * FROM usuario WHERE id_usuario = ?', [id_usuario]);
     const usuarios = rows as Usuario[];
@@ -32,7 +38,13 @@ export class UsuarioRepository {
       [data.dni, data.nombre, data.apellido, data.rol, data.id_localidad]
     );
     const insertedId = result.insertId;
-    return { id_usuario: insertedId, ...data };
+    return { 
+      id_usuario: insertedId, 
+      ...data,
+      email: data.email ?? null,
+      username: data.username ?? null,
+      password: data.password ?? null
+    };
   }
 
 async update(id: number, datos: UsuarioUpdate): Promise<Usuario> {

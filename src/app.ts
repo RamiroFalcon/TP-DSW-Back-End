@@ -7,6 +7,7 @@ import reservaRouter from './reserva/reserva.routes.js';
 import precioRoutes from './precio/precio.routes';
 import servicioRoutes from './servicio/servicio.routes';
 import reservaServicioRoutes from './reserva-servicio/reserva-servicio.routes.js';
+import authRouter from './auth/auth.routes.js';
 
 
 const app = express();
@@ -21,6 +22,7 @@ app.use('/api/reservas', reservaRouter);
 app.use('/precios', precioRoutes);
 app.use('/servicios', servicioRoutes);
 app.use('/reserva-servicio', reservaServicioRoutes);
+app.use('/api/auth', authRouter);
 
 // Manejador de rutas inexistentes
 app.use((_, res) => {
