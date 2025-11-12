@@ -9,29 +9,17 @@ Content-Type: application/json
   "hora_inicio": "15:00:00",
   "hora_fin": "17:00:00",
   "precio_total": 9000,
-  "id_servicios": [1, 2]
 }
 
-### Obtener todas las reservas con servicios
+### Obtener todas las reservas
 GET http://localhost:3000/api/reservas
-
-
-GET http://localhost:3000/api/reservas/rango-fecha?inicio=YYYY-MM-DD&fin=YYYY-MM-DD
-
 
 ### Obtener reserva por ID
 GET http://localhost:3000/api/reservas/1
 
-### Agregar nuevos servicios a una reserva existente
-POST http://localhost:3000/api/reservas/1/servicios
-Content-Type: application/json
-
-{
-  "id_servicios": [3]
-}
 
 ### Eliminar un servicio de una reserva
-DELETE http://localhost:3000/api/reservas/1/servicios/2
+DELETE http://localhost:3000/api/reservas/1
 
 ### Actualizar una reserva
 PUT http://localhost:3000/api/reservas
@@ -46,4 +34,4 @@ Content-Type: application/json
 }
 
 ### Eliminar una reserva
-DELETE http://localhost:3000/api/reservas/1/1/2
+DELETE http://localhost:3000/api/reservas/1

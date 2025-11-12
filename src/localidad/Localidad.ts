@@ -1,4 +1,4 @@
-import { LocalidadRepository } from './Localidad.repository';
+import { LocalidadRepository } from './localidad.repository';
 import { Localidad, LocalidadCreate, LocalidadUpdate } from './localidad.entity';
 
 export class LocalidadService {
