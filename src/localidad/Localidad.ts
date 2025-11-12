@@ -1,5 +1,5 @@
-import { LocalidadRepository } from './localidad.repository';
-import { Localidad, LocalidadCreate, LocalidadUpdate } from './localidad.entity';
+import { LocalidadRepository } from './localidad.repository.js';
+import { Localidad, LocalidadCreate, LocalidadUpdate } from './localidad.entity.js';
 
 export class LocalidadService {
   constructor(private repository: LocalidadRepository) {}

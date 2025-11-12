@@ -20,14 +20,14 @@ app.use(cors());
 // ✅ Montar rutas principales (sin volver a escribir /api adentro del router)
 app.use('/api/canchas', canchaRouter);
 app.use('/api/usuarios', usuarioRouter);
-app.use('/api/tipo-canchas', tipoCanchaRouter);
-app.use('/api/localidades', localidadRouter);
+app.use('/api/tipo-canchas', tipoCanchaRouter); //para obtener deportes
+app.use('/api/localidades', localidadRouter); //para obtener localidades
 app.use('/api/reservas', reservaRouter);
 app.use('/api/precios', precioRoutes);
 app.use('/api/servicios', servicioRoutes);
 app.use('/reserva-servicio', reservaServicioRoutes);
 app.use('/api/auth', authRouter);
-app.use('/api/buscar-canchas', busquedaCanchaRouter);
+app.use('/api/buscar-canchas', busquedaCanchaRouter); //para buscar canchas
 app.use('/api/disponibilidad', disponibilidadRouter);
 
 // Manejador de rutas inexistentes

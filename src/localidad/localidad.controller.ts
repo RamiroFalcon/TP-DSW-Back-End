@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { LocalidadService } from './localidad';
+import { LocalidadService } from './localidad.js';
 
 export class LocalidadController {
   constructor(private service: LocalidadService) {}
@@ -19,11 +19,15 @@ export class LocalidadController {
   // GET /api/localidades
   obtenerTodas = async (req: Request, res: Response): Promise<void> => {
     try {
+      console.log('🔍 Intentando obtener todas las localidades...');
       const localidades = await this.service.obtenerTodas(); // ✅ Añade await
+      console.log('✅ Localidades obtenidas:', localidades);
       res.status(200).json(localidades); // ✅ Devuelve directamente el array
     } catch (error) {
+      console.error('❌ Error al obtener localidades:', error);
       res.status(500).json({
-        message: 'Error al obtener localidades'
+        message: 'Error al obtener localidades',
+        error: error instanceof Error ? error.message : 'Error desconocido'
       });
     }
   };

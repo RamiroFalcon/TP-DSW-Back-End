@@ -1,5 +1,5 @@
-import { Localidad, LocalidadCreate } from './localidad.entity';
-import { pool } from '../database/connection';
+import { Localidad, LocalidadCreate } from './localidad.entity.js';
+import { pool } from '../database/connection.js';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 export class LocalidadRepository {
@@ -18,14 +18,14 @@ export class LocalidadRepository {
 
   async findAll(): Promise<Localidad[]> {
     const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM localidad'
+      'SELECT id_localidad as id, nombre FROM localidad'
     );
     return rows as Localidad[];
   }
 
   async findById(id: number): Promise<Localidad | undefined> {
     const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM localidad WHERE id = ?',
+      'SELECT id_localidad as id, nombre FROM localidad WHERE id_localidad = ?',
       [id]
     );
     return rows[0] as Localidad | undefined;
@@ -33,7 +33,7 @@ export class LocalidadRepository {
 
   async update(id: number, nombre: string): Promise<Localidad | null> {
     const [result] = await pool.query<ResultSetHeader>(
-      'UPDATE localidad SET nombre = ? WHERE id = ?',
+      'UPDATE localidad SET nombre = ? WHERE id_localidad = ?',
       [nombre, id]
     );
     
@@ -44,7 +44,7 @@ export class LocalidadRepository {
 
   async delete(id: number): Promise<boolean> {
     const [result] = await pool.query<ResultSetHeader>(
-      'DELETE FROM localidad WHERE id = ?',
+      'DELETE FROM localidad WHERE id_localidad = ?',
       [id]
     );
     return result.affectedRows > 0;

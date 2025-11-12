@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
-import { BusquedaCanchaService } from './busqueda-cancha';
-import { CanchaRepository } from '../cancha/cancha.repository';
+import { BusquedaCanchaService } from './busqueda-cancha.js';
+import { CanchaRepository } from '../cancha/cancha.repository.js';
+import { pool } from '../database/connection.js';
+import { RowDataPacket } from 'mysql2';
 
 const canchaRepository = new CanchaRepository();
 const service = new BusquedaCanchaService(canchaRepository);
@@ -44,6 +46,55 @@ export async function buscarCanchas(req: Request, res: Response) {
       }
     });
   } catch (error: any) {
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+}
+
+// Nueva función para POST con nombres en lugar de IDs
+export async function buscarCanchasPorNombres(req: Request, res: Response) {
+  try {
+    console.log('🔍 POST body:', req.body);
+    
+    const { deporte, localidad, fecha } = req.body;
+
+    // Usar fecha actual si no se proporciona
+    const fechaBusqueda = fecha || new Date().toISOString().split('T')[0];
+
+    // Validar que se proporcionen deporte y localidad
+    if (!deporte || !localidad) {
+      return res.status(400).json({
+        success: false,
+        message: 'Deporte y localidad son requeridos'
+      });
+    }
+
+    console.log(`🔍 Buscando: deporte=${deporte}, localidad=${localidad}, fecha=${fechaBusqueda}`);
+
+    // Usar el nuevo método del servicio
+    const canchas = await service.buscarCanchasPorNombre(
+      deporte,
+      localidad,
+      fechaBusqueda
+    );
+
+    res.json({
+      success: true,
+      data: {
+        fecha: fechaBusqueda,
+        filtros: {
+          deporte,
+          localidad
+        },
+        total_canchas: canchas.length,
+        canchas
+      }
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error en buscarCanchasPorNombres:', error);
     res.status(500).json({ 
       success: false, 
       message: error.message 

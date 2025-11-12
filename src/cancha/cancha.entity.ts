@@ -4,7 +4,7 @@ export interface Cancha {
   estado: 'disponible' | 'ocupada' | 'mantenimiento';
   id_tipo: number;
   id_localidad: number;
-  precio: number;
+  precio?: number; // Opcional porque no existe en la tabla actual
   hora_apertura: string; // formato HH:MM:SS
   hora_cierre: string;   // formato HH:MM:SS
 }
@@ -14,7 +14,7 @@ export interface CanchaCreate {
   estado?: 'disponible' | 'ocupada' | 'mantenimiento';
   id_tipo: number;
   id_localidad: number;
-  precio: number;
+  precio?: number; // Opcional porque no existe en la tabla actual
   hora_apertura?: string;
   hora_cierre?: string;
 }
