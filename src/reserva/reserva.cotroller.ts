@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ReservaService } from '../Reserva/reserva';
+import { ReservaService } from '../reserva/reserva';
 
 export class ReservaController {
   private service: ReservaService;
