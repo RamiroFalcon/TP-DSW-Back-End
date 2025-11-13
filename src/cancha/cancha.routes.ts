@@ -13,6 +13,7 @@ const controller = new CanchaController(service);
 router.post('/', controller.crear);
 router.get('/', controller.obtenerTodas);
 router.get('/:id', controller.obtenerPorId);
+router.get('/disponibilidad', controller.obtenerDisponibilidad);
 router.get('/tipo/:id_tipo', (req, res) => controller.obtenerPorTipo(req, res));
 router.put('/:id', controller.actualizar);
 router.delete('/:id', controller.eliminar);

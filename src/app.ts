@@ -9,6 +9,7 @@ import precioRoutes from './precio/precio.routes.js';
 import servicioRoutes from './servicio/servicio.routes.js';
 import reservaServicioRoutes from './reserva-servicio/reserva-servicio.routes.js';
 import authRouter from './auth/auth.routes.js';
+import pagoRouter from './pago/pago.routes.js'; 
 
 const app = express();
 app.use(express.json());
@@ -24,6 +25,7 @@ app.use('/api/precios', precioRoutes);
 app.use('/api/servicios', servicioRoutes);
 app.use('/reserva-servicio', reservaServicioRoutes);
 app.use('/api/auth', authRouter);
+app.use('/api/pagos', pagoRouter); // ✅ Nuevas rutas de pagos
 
 // Manejador de rutas inexistentes
 app.use((_, res) => {

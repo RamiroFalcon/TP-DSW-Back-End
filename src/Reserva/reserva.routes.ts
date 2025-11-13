@@ -19,3 +19,4 @@ router.delete('/:id/servicios/:id_servicio', (req, res) => controller.eliminarSe
 router.post('/calcular-precio', (req, res) => controller.calcularPrecio(req, res));
 
 export default router;
+

@@ -19,31 +19,30 @@ export class ReservaService {
   }
 
   // 🔹 Obtener precio vigente de la cancha
-  private async obtenerPrecioVigente(id_cancha: number, fecha: string): Promise<number> {
-    const [rows] = await pool.query(
-      `SELECT valor_por_hora FROM precio 
-       WHERE id_cancha = ? AND fecha_vigencia <= ? 
-       ORDER BY fecha_vigencia DESC LIMIT 1`,
-      [id_cancha, fecha]
+ private async obtenerPrecioVigente(id_cancha: number, fecha: string): Promise<number> {
+  const [rows] = await pool.query(
+    `SELECT valor_por_hora FROM precio 
+     WHERE id_cancha = ? AND fecha_vigencia <= ? 
+     ORDER BY fecha_vigencia DESC LIMIT 1`,
+    [id_cancha, fecha]
+  );
+  
+  const precios = rows as any[];
+  if (precios.length === 0) {
+    // ❌ CAMBIAR: precio_por_hora → precio
+    const [rowsCancha] = await pool.query(
+      'SELECT precio FROM cancha WHERE id_cancha = ?', // ✅ Cambiado
+      [id_cancha]
     );
-    
-    const precios = rows as any[];
-    if (precios.length === 0) {
-      // Si no hay precio vigente, buscar en cancha como fallback
-      const [rowsCancha] = await pool.query(
-        'SELECT precio_por_hora FROM cancha WHERE id_cancha = ?',
-        [id_cancha]
-      );
-      const cancha = (rowsCancha as any[])[0];
-      if (!cancha) {
-        throw new Error(`No se encontró la cancha ${id_cancha}`);
-      }
-      return cancha.precio_por_hora;
+    const cancha = (rowsCancha as any[])[0];
+    if (!cancha) {
+      throw new Error(`No se encontró la cancha ${id_cancha}`);
     }
-    
-    return precios[0].valor_por_hora;
+    return cancha.precio; // ✅ Cambiado
   }
-
+  
+  return precios[0].valor_por_hora;
+}
   // 🔹 Calcular precio total automáticamente - CORREGIDO
   private async calcularPrecioTotal(data: {
     id_cancha: number;
@@ -296,5 +295,78 @@ export class ReservaService {
 
   async obtenerServicios(id_reserva: number) {
     return this.repository.findServiciosByReserva(id_reserva);
+  }
+ async verificarDisponibilidad(data: {
+    id_cancha: number;
+    fecha: string;
+    hora_inicio: string;
+    hora_fin: string;
+  }): Promise<boolean> {
+    const [reservasExistentes] = await pool.query(
+      `SELECT * FROM reserva 
+       WHERE id_cancha = ? AND fecha = ? 
+       AND (
+         (hora_inicio < ? AND hora_fin > ?) OR
+         (hora_inicio >= ? AND hora_inicio < ?) OR
+         (hora_fin > ? AND hora_fin <= ?)
+       )`,
+      [
+        data.id_cancha, data.fecha,
+        data.hora_fin, data.hora_inicio,
+        data.hora_inicio, data.hora_fin,
+        data.hora_inicio, data.hora_fin
+      ]
+    );
+
+    return (reservasExistentes as any[]).length === 0;
+  }
+
+  // 🔹 NUEVO: Obtener reservas por usuario
+  async obtenerPorUsuario(id_usuario: number): Promise<any[]> {
+    const reservas = await this.repository.findByUsuario(id_usuario);
+    
+    // Enriquecer con información de canchas y servicios
+    const reservasCompletas = await Promise.all(
+      reservas.map(async (reserva) => {
+        const servicios = await this.repository.findServiciosByReserva(reserva.id_reserva);
+        
+        // Obtener información de la cancha
+        const [canchas] = await pool.query(
+          `SELECT c.nombre, l.nombre as localidad, t.nombre as tipo, t.deporte 
+           FROM cancha c 
+           LEFT JOIN localidad l ON c.id_localidad = l.id_localidad
+           LEFT JOIN tipo_cancha t ON c.id_tipo = t.id_tipo
+           WHERE c.id_cancha = ?`,
+          [reserva.id_cancha]
+        );
+        
+        const cancha = (canchas as any[])[0] || {};
+        
+        return {
+          ...reserva,
+          cancha_nombre: cancha.nombre,
+          localidad: cancha.localidad,
+          deporte: cancha.deporte,
+          tipo_cancha: cancha.tipo,
+          servicios: servicios.map(s => s.nombre)
+        };
+      })
+    );
+    
+    return reservasCompletas;
+  }
+
+  // 🔹 NUEVO: Permitir modificación solo si el pago está pendiente
+  async puedeModificar(id_reserva: number): Promise<boolean> {
+    // Verificar si existe un pago completado para esta reserva
+    const [pagos] = await pool.query(
+      'SELECT estado FROM pago WHERE id_reserva = ? ORDER BY fecha_creacion DESC LIMIT 1',
+      [id_reserva]
+    );
+    
+    const pago = (pagos as any[])[0];
+    
+    // Si no hay pago o el pago está pendiente, se puede modificar
+    return !pago || pago.estado === 'pendiente';
   }
 }
