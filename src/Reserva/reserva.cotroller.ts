@@ -74,7 +74,7 @@ export class ReservaController {
     }
   }
 
-  // 🔹 NUEVO: Calcular precio en tiempo real
+  
   async calcularPrecio(req: Request, res: Response) {
     try {
       const { id_cancha, fecha, hora_inicio, hora_fin, id_servicios } = req.body;

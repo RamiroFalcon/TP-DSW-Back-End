@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { UsuarioController } from './usuario.controller';
-import { UsuarioService } from '../usuario/usuario';
-import { UsuarioRepository } from './usuario.repository';
+import { UsuarioController } from '../Usuario/usuario.controller';
+import { UsuarioService } from '../Usuario/usuario';
+import { UsuarioRepository } from '../Usuario/usuario.repository';
 
 const router = Router();
 

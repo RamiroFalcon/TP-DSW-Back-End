@@ -1,4 +1,4 @@
-import { UsuarioRepository } from './usuario.repository';
+import { UsuarioRepository } from '../Usuario/usuario.repository';
 import { Usuario, UsuarioCreate, UsuarioUpdate } from './usuario.entity';
 import { RolUsuario } from './usuario.entity';
 

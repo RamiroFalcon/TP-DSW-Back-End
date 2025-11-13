@@ -3,38 +3,38 @@ import { Reserva, ReservaCreate, ReservaUpdate } from './reserva.entity';
 import { ResultSetHeader } from 'mysql2';
 
 export class ReservaRepository {
-  // 🔹 Obtener todas las reservas
+ 
   async findAll(): Promise<Reserva[]> {
     const [rows] = await pool.query('SELECT * FROM reserva');
     return rows as Reserva[];
   }
 
-  // 🔹 Obtener reserva por ID
+
   async findByIdReserva(id_reserva: number): Promise<Reserva | null> {
     const [rows] = await pool.query('SELECT * FROM reserva WHERE id_reserva = ?', [id_reserva]);
     const result = rows as Reserva[];
     return result.length > 0 ? result[0] : null;
   }
 
-  // 🔹 Obtener reservas por usuario
+
   async findByUsuario(id_usuario: number): Promise<Reserva[]> {
     const [rows] = await pool.query('SELECT * FROM reserva WHERE id_usuario = ?', [id_usuario]);
     return rows as Reserva[];
   }
 
-  // 🔹 Obtener reservas por cancha
+  
   async findByCancha(id_cancha: number): Promise<Reserva[]> {
     const [rows] = await pool.query('SELECT * FROM reserva WHERE id_cancha = ?', [id_cancha]);
     return rows as Reserva[];
   }
 
-  // 🔹 Obtener reservas por fecha
+ 
   async findByFecha(fecha: string): Promise<Reserva[]> {
     const [rows] = await pool.query('SELECT * FROM reserva WHERE fecha = ?', [fecha]);
     return rows as Reserva[];
   }
 
-  // 🔹 Obtener reservas por rango de fechas
+  
   async findByRangoFecha(fecha_inicio: string, fecha_fin: string): Promise<any[]> {
     const [rows] = await pool.query(
       `
@@ -55,7 +55,6 @@ export class ReservaRepository {
     return rows as any[];
   }
 
-  // 🔹 Crear reserva
   async create(data: ReservaCreate): Promise<Reserva> {
     const { id_usuario, id_cancha, fecha, hora_inicio, hora_fin, precio_total } = data;
     const [result] = await pool.query<ResultSetHeader>(
@@ -64,7 +63,7 @@ export class ReservaRepository {
     );
     const id_reserva = result.insertId;
 
-    // Si hay servicios, agregarlos
+   
     if (data.id_servicios && data.id_servicios.length > 0) {
       for (const id_servicio of data.id_servicios) {
         await pool.query('INSERT INTO reserva_servicio (id_reserva, id_servicio) VALUES (?, ?)', [id_reserva, id_servicio]);
@@ -74,7 +73,7 @@ export class ReservaRepository {
     return { id_reserva, ...data };
   }
 
-  // 🔹 Actualizar reserva
+
   async actualizar(reserva: Reserva): Promise<Reserva> {
     await pool.query(
       'UPDATE reserva SET hora_inicio = ?, hora_fin = ?, fecha = ?, precio_total = ? WHERE id_reserva = ?',
@@ -83,27 +82,26 @@ export class ReservaRepository {
     return reserva;
   }
 
-  // 🔹 Eliminar reserva
    async delete(id_reserva: number): Promise<void> {
-    // Primero eliminar los servicios asociados
+ 
     await pool.query('DELETE FROM reserva_servicio WHERE id_reserva = ?', [id_reserva]);
-    // Luego eliminar la reserva
+   
     await pool.query('DELETE FROM reserva WHERE id_reserva = ?', [id_reserva]);
   }
 
-  // 🔹➕ NUEVO: Agregar servicios a reserva existente
+
   async addServicios(id_reserva: number, id_servicios: number[]): Promise<void> {
     for (const id_servicio of id_servicios) {
       await pool.query('INSERT INTO reserva_servicio (id_reserva, id_servicio) VALUES (?, ?)', [id_reserva, id_servicio]);
     }
   }
 
-  // 🔹➕ NUEVO: Eliminar un servicio de una reserva
+ 
   async removeServicio(id_reserva: number, id_servicio: number): Promise<void> {
     await pool.query('DELETE FROM reserva_servicio WHERE id_reserva = ? AND id_servicio = ?', [id_reserva, id_servicio]);
   }
 
-  // 🔹➕ NUEVO: Obtener servicios de una reserva - CORREGIDO
+
   async findServiciosByReserva(id_reserva: number): Promise<any[]> {
     const [rows] = await pool.query(
       `SELECT s.id_servicio, s.nombre, s.precio_servicio as precio
@@ -115,7 +113,7 @@ export class ReservaRepository {
     return rows as any[];
   }
 
-  // 🔹➕ NUEVO: Obtener todas las reservas con servicios
+
   async findAllWithServicios(): Promise<any[]> {
     const [reservas] = await pool.query('SELECT * FROM reserva');
     const reservasConServicios = await Promise.all(
