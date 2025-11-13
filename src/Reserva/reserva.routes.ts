@@ -11,11 +11,11 @@ router.get('/:id', (req, res) => controller.obtenerPorId(req, res));
 router.put('/:id', (req, res) => controller.actualizarReserva(req, res));
 router.delete('/:id', (req, res) => controller.eliminarReserva(req, res));
 
-// Servicios
+
 router.post('/:id/servicios', (req, res) => controller.agregarServicios(req, res));
 router.delete('/:id/servicios/:id_servicio', (req, res) => controller.eliminarServicio(req, res));
 
-// 🔹 NUEVA RUTA: Calcular precio en tiempo real
+
 router.post('/calcular-precio', (req, res) => controller.calcularPrecio(req, res));
 
 export default router;

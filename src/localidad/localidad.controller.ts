@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { LocalidadService } from './localidad.js';
+import { LocalidadService } from '././Localidad.js';
 
 export class LocalidadController {
   constructor(private service: LocalidadService) {}
 
-  // POST /api/localidades
+
   crear = async (req: Request, res: Response): Promise<void> => {
     try {
       const localidad = await this.service.crearLocalidad(req.body); // ✅ Añade await
@@ -16,7 +16,7 @@ export class LocalidadController {
     }
   };
 
-  // GET /api/localidades
+
   obtenerTodas = async (req: Request, res: Response): Promise<void> => {
     try {
       console.log('🔍 Intentando obtener todas las localidades...');
@@ -32,7 +32,6 @@ export class LocalidadController {
     }
   };
 
-  // GET /api/localidades/:id
   obtenerPorId = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = parseInt(req.params.id);
@@ -45,7 +44,7 @@ export class LocalidadController {
     }
   };
 
-  // PUT /api/localidades/:id
+ 
   actualizar = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = parseInt(req.params.id);
@@ -58,7 +57,6 @@ export class LocalidadController {
     }
   };
 
-  // DELETE /api/localidades/:id
   eliminar = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = parseInt(req.params.id);

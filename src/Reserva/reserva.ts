@@ -28,16 +28,16 @@ export class ReservaService {
   
   const precios = rows as any[];
   if (precios.length === 0) {
-    // ❌ CAMBIAR: precio_por_hora → precio
+  
     const [rowsCancha] = await pool.query(
-      'SELECT precio FROM cancha WHERE id_cancha = ?', // ✅ Cambiado
+      'SELECT precio FROM cancha WHERE id_cancha = ?', 
       [id_cancha]
     );
     const cancha = (rowsCancha as any[])[0];
     if (!cancha) {
       throw new Error(`No se encontró la cancha ${id_cancha}`);
     }
-    return cancha.precio; // ✅ Cambiado
+    return cancha.precio; 
   }
   
   return precios[0].valor_por_hora;
@@ -58,7 +58,7 @@ export class ReservaService {
     const precioCancha = precioPorHora * horas;
     precio_total += precioCancha;
 
-    console.log(`💰 Cálculo precio - Cancha: ${precioCancha}, Horas: ${horas}, Precio/hora: ${precioPorHora}`);
+    console.log(`- Cálculo precio - Cancha: ${precioCancha}, Horas: ${horas}, Precio/hora: ${precioPorHora}`);
 
     
     if (data.id_servicios && data.id_servicios.length > 0) {
@@ -75,10 +75,10 @@ export class ReservaService {
       }, 0);
       
       precio_total += sumaServicios;
-      console.log(`💰 Cálculo precio - Servicios: ${sumaServicios}, Total servicios: ${data.id_servicios.length}`);
+      console.log(`- Cálculo precio - Servicios: ${sumaServicios}, Total servicios: ${data.id_servicios.length}`);
     }
 
-    console.log(`💰 Cálculo precio - Total final: ${precio_total}`);
+    console.log(`- Cálculo precio - Total final: ${precio_total}`);
     return precio_total;
   }
 
@@ -96,7 +96,7 @@ export class ReservaService {
 
     data.precio_total = Number(precioCalculado.toFixed(2));
 
-    console.log(`✅ Reserva creada - Precio total: ${data.precio_total}`);
+    console.log(`- Reserva creada - Precio total: ${data.precio_total}`);
     return this.repository.create(data);
   }
 
@@ -104,7 +104,7 @@ export class ReservaService {
   async obtenerTodasConServicios(): Promise<any[]> {
     const reservas = await this.repository.findAllWithServicios();
     
-    // Obtener información de usuarios y canchas para mostrar nombres
+    //  información de usuarios y canchas para mostrar nombres
     const [usuarios] = await pool.query('SELECT id_usuario, nombre, apellido FROM usuario');
     const [canchas] = await pool.query('SELECT id_cancha, nombre FROM cancha');
     
@@ -157,14 +157,14 @@ export class ReservaService {
 
   
   async actualizarReserva(reservaData: any): Promise<Reserva> {
-    // Obtener servicios actuales de la reserva
+    //  servicios actuales de la reserva
     const serviciosActuales = await this.repository.findServiciosByReserva(reservaData.id_reserva);
     const id_servicios_actuales = serviciosActuales.map(s => s.id_servicio);
     
-    // Combinar servicios existentes con los nuevos si se proporcionan
+    //  servicios existentes con los nuevos si se proporcionan
     const id_servicios = reservaData.id_servicios || id_servicios_actuales;
 
-    // Calcular precio total automáticamente
+    //  precio total automáticamente
     const precio_total = await this.calcularPrecioTotal({
       id_cancha: reservaData.id_cancha,
       fecha: reservaData.fecha,
@@ -173,12 +173,12 @@ export class ReservaService {
       id_servicios: id_servicios
     });
 
-    // CORREGIDO: asegurar que el precio es un número válido
+   
     const precioTotalFinal = Number(precio_total.toFixed(2));
 
-    console.log(`✅ Reserva actualizada - Precio total: ${precioTotalFinal}`);
+    console.log(`- Reserva actualizada - Precio total: ${precioTotalFinal}`);
 
-    // Actualizar reserva
+   
     const reservaActualizada: Reserva = {
       id_reserva: reservaData.id_reserva,
       id_usuario: reservaData.id_usuario,
@@ -191,12 +191,13 @@ export class ReservaService {
 
     await this.repository.actualizar(reservaActualizada);
 
-    // Actualizar servicios si se proporcionaron nuevos
+    // actualizar servicios si se proporcionaron nuevos
     if (reservaData.id_servicios) {
-      // Eliminar servicios actuales
+
+      // eliminar servicios actuales
       await pool.query('DELETE FROM reserva_servicio WHERE id_reserva = ?', [reservaData.id_reserva]);
       
-      // Agregar nuevos servicios
+      // agregar nuevos servicios
       if (reservaData.id_servicios.length > 0) {
         await this.repository.addServicios(reservaData.id_reserva, reservaData.id_servicios);
       }
@@ -225,7 +226,7 @@ export class ReservaService {
         data.id_servicios
       );
       
-      // CORREGIDO: asegurar que se suman números
+      
       precio_servicios = (rowsServicios as any[]).reduce((acc, s) => {
         const precio = Number(s.precio_servicio) || 0;
         return acc + precio;
@@ -236,7 +237,7 @@ export class ReservaService {
 
     const precio_total = Number((precio_cancha + precio_servicios).toFixed(2));
 
-    console.log(`💰 Cálculo tiempo real - Cancha: ${precio_cancha}, Servicios: ${precio_servicios}, Total: ${precio_total}`);
+    console.log(`- Cálculo tiempo real - Cancha: ${precio_cancha}, Servicios: ${precio_servicios}, Total: ${precio_total}`);
 
     return {
       precio_total,
@@ -245,9 +246,8 @@ export class ReservaService {
     };
   }
 
-  // Mantener los demás métodos igual...
   async agregarServicios(id_reserva: number, id_servicios: number[]): Promise<void> {
-    // Sumar precios de servicios
+   
     if (id_servicios.length > 0) {
       const placeholders = id_servicios.map(() => '?').join(',');
       const [rowsServicios] = await pool.query(
@@ -255,31 +255,32 @@ export class ReservaService {
         id_servicios
       );
       
-      // CORREGIDO: asegurar que se suman números
+     
       const sumaServicios = (rowsServicios as any[]).reduce((acc, s) => {
         const precio = Number(s.precio_servicio) || 0;
         return acc + precio;
       }, 0);
 
-      // Actualizar precio total
+    
       await pool.query(
         'UPDATE reserva SET precio_total = precio_total + ? WHERE id_reserva = ?', 
         [sumaServicios, id_reserva]
       );
     }
 
-    // Guardar servicios
+    
     return this.repository.addServicios(id_reserva, id_servicios);
   }
 
   async eliminarServicio(id_reserva: number, id_servicio: number) {
-    // obtener precio del servicio
+    
     const [rows] = await pool.query('SELECT precio_servicio FROM servicio WHERE id_servicio = ?', [id_servicio]);
     const servicios = rows as any[];
     
     if (servicios.length > 0) {
       const servicio = servicios[0];
       const precio = Number(servicio.precio_servicio) || 0;
+
       // actualizar precio total
       await pool.query('UPDATE reserva SET precio_total = precio_total - ? WHERE id_reserva = ?', [precio, id_reserva]);
     }
@@ -365,7 +366,7 @@ export class ReservaService {
     
     const pago = (pagos as any[])[0];
     
-    // Si no hay pago o el pago está pendiente, se puede modificar
+    // si no hay pago o el pago está pendiente, se puede modificar
     return !pago || pago.estado === 'pendiente';
   }
 }

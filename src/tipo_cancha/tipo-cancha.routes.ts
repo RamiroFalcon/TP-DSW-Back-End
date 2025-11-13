@@ -3,7 +3,6 @@ import { obtenerTodos, obtenerPorId, crear, actualizar, eliminar } from './tipo-
 
 const router = Router();
 
-// Este router se monta en app.ts con base '/api/tipo-canchas'
 router.post('/', crear);
 router.get('/', obtenerTodos);
 router.get('/:id', obtenerPorId);

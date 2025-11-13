@@ -140,7 +140,7 @@ export class CanchaController {
           [cancha.id_cancha, fecha]
         );
         
-        console.log(`⏰ Cancha ${cancha.nombre}: ${(reservas as any[]).length} reservas encontradas`);
+        console.log(` Cancha ${cancha.nombre}: ${(reservas as any[]).length} reservas encontradas`);
         
         // 3. Calcular horarios disponibles basados en hora_apertura y hora_cierre
         const horariosOcupados = (reservas as any[]).map(r => ({
@@ -182,7 +182,7 @@ export class CanchaController {
   }
 };
 
-// ✅ MÉTODO AUXILIAR CORREGIDO: Calcular horarios disponibles basado en apertura/cierre
+
 private calcularHorariosDisponibles(
   horaApertura: string, 
   horaCierre: string, 
@@ -190,7 +190,7 @@ private calcularHorariosDisponibles(
 ): string[] {
   const horariosDisponibles = [];
   
-  // Convertir horas a números
+ 
   const apertura = parseInt(horaApertura.split(':')[0]);
   const cierre = parseInt(horaCierre.split(':')[0]);
   

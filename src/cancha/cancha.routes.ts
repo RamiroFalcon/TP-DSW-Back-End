@@ -9,7 +9,7 @@ const repository = new CanchaRepository();
 const service = new CanchaService(repository);
 const controller = new CanchaController(service);
 
-// 👇 sacamos el prefijo /api/canchas
+
 router.post('/', controller.crear);
 router.get('/', controller.obtenerTodas);
 router.get('/:id', controller.obtenerPorId);

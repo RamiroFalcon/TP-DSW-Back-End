@@ -10,7 +10,7 @@ router.post('/', controller.crear);
 router.put('/:id', controller.actualizar);
 router.delete('/:id', controller.eliminar);
 
-// 🔗 Rutas para relación con reservas
+
 router.post('/reserva/:id_reserva', controller.asignarAReserva);
 router.get('/reserva/:id_reserva', controller.obtenerPorReserva);
 
