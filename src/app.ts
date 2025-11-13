@@ -1,21 +1,23 @@
 import express from 'express';
 import cors from 'cors';
 import canchaRouter from './cancha/cancha.routes.js';
-import usuarioRouter from './Usuario/usuario.routes.js';
+import usuarioRouter from './usuario/usuario.routes.js';
 import tipoCanchaRouter from './tipo_cancha/tipo-cancha.routes.js';
 import localidadRouter from './localidad/localidad.routes.js';
-import reservaRouter from './Reserva/reserva.routes.js';
+import reservaRouter from './reserva/reserva.routes.js';
 import precioRoutes from './precio/precio.routes.js';
 import servicioRoutes from './servicio/servicio.routes.js';
 import reservaServicioRoutes from './reserva-servicio/reserva-servicio.routes.js';
 import authRouter from './auth/auth.routes.js';
-import pagoRouter from './pago/pago.routes.js'; 
+import pagoRouter from './pago/pago.routes.js';
+import disponibilidadRouter from './disponibilidad/disponibilidad.routes.js';
+import busquedaCanchaRouter from './busqueda-cancha/busqueda-cancha.routes.js';
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// ✅ Montar rutas principales
+// ✅ Todas las rutas
 app.use('/api/canchas', canchaRouter);
 app.use('/api/usuarios', usuarioRouter);
 app.use('/api/tipo-canchas', tipoCanchaRouter);
@@ -25,7 +27,9 @@ app.use('/api/precios', precioRoutes);
 app.use('/api/servicios', servicioRoutes);
 app.use('/reserva-servicio', reservaServicioRoutes);
 app.use('/api/auth', authRouter);
-app.use('/api/pagos', pagoRouter); // ✅ Nuevas rutas de pagos
+app.use('/api/pagos', pagoRouter);
+app.use('/api/disponibilidad', disponibilidadRouter);
+app.use('/api/buscar-canchas', busquedaCanchaRouter);
 
 // Manejador de rutas inexistentes
 app.use((_, res) => {

@@ -33,7 +33,7 @@ export class CanchaRepository {
         data.estado || 'disponible',
         data.id_tipo,
         data.id_localidad,
-        data.precio || 0,
+        data.precio_hora || 0,
         data.hora_apertura || '08:00:00',
         data.hora_cierre || '22:00:00'
       ]
@@ -45,7 +45,7 @@ export class CanchaRepository {
       estado: data.estado || 'disponible',
       id_tipo: data.id_tipo,
       id_localidad: data.id_localidad,
-      precio: data.precio || 0,
+      precio_hora: data.precio_hora || 0,
       hora_apertura: data.hora_apertura || '08:00:00',
       hora_cierre: data.hora_cierre || '22:00:00'
     };

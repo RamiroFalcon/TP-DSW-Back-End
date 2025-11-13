@@ -1,0 +1,75 @@
+### === APIS COMPLETAS TURNO SPORT ===
+
+### 1. PING - Verificar servidor
+GET http://localhost:3000/api/ping
+Content-Type: application/json
+
+###
+
+### 2. TIPOS DE CANCHA - Obtener deportes disponibles
+GET http://localhost:3000/api/tipo-canchas
+Content-Type: application/json
+
+###
+
+### 3. LOCALIDADES - Obtener todas las localidades
+GET http://localhost:3000/api/localidades
+Content-Type: application/json
+
+###
+
+### 4. CANCHAS - Obtener todas las canchas
+GET http://localhost:3000/api/canchas
+Content-Type: application/json
+
+###
+
+### 5. BÚSQUEDA COMPLETA - Fútbol en Buenos Aires con disponibilidad
+POST http://localhost:3000/api/buscar-canchas
+Content-Type: application/json
+
+{
+  "deporte": "Fútbol",
+  "localidad": "Buenos Aires",
+  "fecha": "2025-11-15"
+}
+
+###
+
+### 6. DISPONIBILIDAD - Horarios libres de cancha específica
+GET http://localhost:3000/api/disponibilidad?id_cancha=1&fecha=2025-11-15
+Content-Type: application/json
+
+###
+
+### 7. CREAR RESERVA - Reservar una hora específica
+POST http://localhost:3000/api/reservas
+Content-Type: application/json
+
+{
+  "id_usuario": 1,
+  "id_cancha": 1,
+  "fecha": "2025-11-15",
+  "hora_inicio": "09:00:00",
+  "hora_fin": "10:00:00",
+  "estado": "confirmada"
+}
+
+###
+
+### 8. OBTENER RESERVAS - Ver reservas existentes
+GET http://localhost:3000/api/reservas
+Content-Type: application/json
+
+###
+
+### 9. LOGIN - Autenticación de usuario
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "nombre": "Juan",
+  "apellido": "Pérez"
+}
+
+###
