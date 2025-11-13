@@ -1,4 +1,4 @@
-import { UsuarioRepository } from '../usuario/usuario.repository';
+import { UsuarioRepository } from '../Usuario/usuario.repository';
 import { LoginDto } from '../usuario/usuario.entity';
 
 export class AuthService {
