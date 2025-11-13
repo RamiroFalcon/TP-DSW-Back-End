@@ -16,8 +16,8 @@ export class ServicioRepository {
 
   async create(data: ServicioCreate): Promise<number> {
     const [result] = await pool.query<ResultSetHeader>(
-      'INSERT INTO servicio (nombre, precio) VALUES (?, ?)',
-      [data.nombre, data.precio]
+      'INSERT INTO servicio (nombre, precio_servicio) VALUES (?, ?)',
+      [data.nombre, data.precio_servicio]
     );
     return result.insertId;
   }
@@ -30,9 +30,9 @@ export class ServicioRepository {
       fields.push('nombre = ?');
       values.push(data.nombre);
     }
-    if (data.precio !== undefined) {
-      fields.push('precio = ?');
-      values.push(data.precio);
+    if (data.precio_servicio !== undefined) {
+      fields.push('precio_servicio = ?');
+      values.push(data.precio_servicio);
     }
 
     if (fields.length === 0) return;

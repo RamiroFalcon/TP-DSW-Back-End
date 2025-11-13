@@ -84,9 +84,11 @@ export class ReservaRepository {
   }
 
   // 🔹 Eliminar reserva
-  async delete(id_reserva: number, id_usuario: number, id_cancha: number): Promise<void> {
+   async delete(id_reserva: number): Promise<void> {
+    // Primero eliminar los servicios asociados
     await pool.query('DELETE FROM reserva_servicio WHERE id_reserva = ?', [id_reserva]);
-    await pool.query('DELETE FROM reserva WHERE id_reserva = ? AND id_usuario = ? AND id_cancha = ?', [id_reserva, id_usuario, id_cancha]);
+    // Luego eliminar la reserva
+    await pool.query('DELETE FROM reserva WHERE id_reserva = ?', [id_reserva]);
   }
 
   // 🔹➕ NUEVO: Agregar servicios a reserva existente
@@ -101,10 +103,10 @@ export class ReservaRepository {
     await pool.query('DELETE FROM reserva_servicio WHERE id_reserva = ? AND id_servicio = ?', [id_reserva, id_servicio]);
   }
 
-  // 🔹➕ NUEVO: Obtener servicios de una reserva
+  // 🔹➕ NUEVO: Obtener servicios de una reserva - CORREGIDO
   async findServiciosByReserva(id_reserva: number): Promise<any[]> {
     const [rows] = await pool.query(
-      `SELECT s.id_servicio, s.nombre, s.precio
+      `SELECT s.id_servicio, s.nombre, s.precio_servicio as precio
        FROM servicio s
        JOIN reserva_servicio rs ON s.id_servicio = rs.id_servicio
        WHERE rs.id_reserva = ?`,

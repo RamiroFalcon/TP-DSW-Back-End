@@ -9,43 +9,266 @@ export class ReservaService {
     this.repository = new ReservaRepository();
   }
 
-  // Crear reserva y calcular precio total (cancha + servicios)
-  async crearReserva(data: ReservaCreate): Promise<Reserva> {
+  // 🔹 Calcular diferencia de horas exacta
+  private calcularHoras(hora_inicio: string, hora_fin: string): number {
+    const inicio = new Date(`2000-01-01T${hora_inicio}`);
+    const fin = new Date(`2000-01-01T${hora_fin}`);
+    const diffMs = fin.getTime() - inicio.getTime();
+    const diffHoras = diffMs / (1000 * 60 * 60);
+    return Math.max(diffHoras, 1); // Mínimo 1 hora
+  }
+
+  // 🔹 Obtener precio vigente de la cancha
+  private async obtenerPrecioVigente(id_cancha: number, fecha: string): Promise<number> {
+    const [rows] = await pool.query(
+      `SELECT valor_por_hora FROM precio 
+       WHERE id_cancha = ? AND fecha_vigencia <= ? 
+       ORDER BY fecha_vigencia DESC LIMIT 1`,
+      [id_cancha, fecha]
+    );
+    
+    const precios = rows as any[];
+    if (precios.length === 0) {
+      // Si no hay precio vigente, buscar en cancha como fallback
+      const [rowsCancha] = await pool.query(
+        'SELECT precio_por_hora FROM cancha WHERE id_cancha = ?',
+        [id_cancha]
+      );
+      const cancha = (rowsCancha as any[])[0];
+      if (!cancha) {
+        throw new Error(`No se encontró la cancha ${id_cancha}`);
+      }
+      return cancha.precio_por_hora;
+    }
+    
+    return precios[0].valor_por_hora;
+  }
+
+  // 🔹 Calcular precio total automáticamente - CORREGIDO
+  private async calcularPrecioTotal(data: {
+    id_cancha: number;
+    fecha: string;
+    hora_inicio: string;
+    hora_fin: string;
+    id_servicios?: number[];
+  }): Promise<number> {
     let precio_total = 0;
 
-    // Precio cancha
-    const [rowsCancha] = await pool.query('SELECT precio_por_hora FROM cancha WHERE id_cancha = ?', [data.id_cancha]);
-    const cancha = (rowsCancha as any[])[0];
-    const horas = Number(data.hora_fin.split(':')[0]) - Number(data.hora_inicio.split(':')[0]) || 1;
-    precio_total += cancha.precio_por_hora * horas;
+    // 1. Precio cancha (usando entidad precio)
+    const precioPorHora = await this.obtenerPrecioVigente(data.id_cancha, data.fecha);
+    const horas = this.calcularHoras(data.hora_inicio, data.hora_fin);
+    const precioCancha = precioPorHora * horas;
+    precio_total += precioCancha;
 
-    // Precio servicios
+    console.log(`💰 Cálculo precio - Cancha: ${precioCancha}, Horas: ${horas}, Precio/hora: ${precioPorHora}`);
+
+    // 2. Precio servicios - CORREGIDO: asegurar que sean números
     if (data.id_servicios && data.id_servicios.length > 0) {
-      const [rowsServicios] = await pool.query(`SELECT precio FROM servicio WHERE id_servicio IN (${data.id_servicios.join(',')})`);
-      const sumaServicios = (rowsServicios as any[]).reduce((acc, s) => acc + s.precio, 0);
+      const placeholders = data.id_servicios.map(() => '?').join(',');
+      const [rowsServicios] = await pool.query(
+        `SELECT precio_servicio FROM servicio WHERE id_servicio IN (${placeholders})`,
+        data.id_servicios
+      );
+      
+      // CORREGIDO: asegurar que se suman números
+      const sumaServicios = (rowsServicios as any[]).reduce((acc, s) => {
+        const precio = Number(s.precio_servicio) || 0;
+        return acc + precio;
+      }, 0);
+      
       precio_total += sumaServicios;
+      console.log(`💰 Cálculo precio - Servicios: ${sumaServicios}, Total servicios: ${data.id_servicios.length}`);
     }
 
-    data.precio_total = precio_total;
+    console.log(`💰 Cálculo precio - Total final: ${precio_total}`);
+    return precio_total;
+  }
 
+  // 🔹 Crear reserva con cálculo automático
+  async crearReserva(data: ReservaCreate): Promise<Reserva> {
+    // Calcular precio total automáticamente
+    const precioCalculado = await this.calcularPrecioTotal({
+      id_cancha: data.id_cancha,
+      fecha: data.fecha,
+      hora_inicio: data.hora_inicio,
+      hora_fin: data.hora_fin,
+      id_servicios: data.id_servicios
+    });
+
+    // CORREGIDO: asegurar que el precio es un número válido
+    data.precio_total = Number(precioCalculado.toFixed(2));
+
+    console.log(`✅ Reserva creada - Precio total: ${data.precio_total}`);
     return this.repository.create(data);
   }
 
-  async obtenerTodasConServicios() {
-    return this.repository.findAllWithServicios();
+  // 🔹 Obtener todas las reservas con información completa
+  async obtenerTodasConServicios(): Promise<any[]> {
+    const reservas = await this.repository.findAllWithServicios();
+    
+    // Obtener información de usuarios y canchas para mostrar nombres
+    const [usuarios] = await pool.query('SELECT id_usuario, nombre, apellido FROM usuario');
+    const [canchas] = await pool.query('SELECT id_cancha, nombre FROM cancha');
+    
+    const usuariosMap = new Map((usuarios as any[]).map(u => [u.id_usuario, u]));
+    const canchasMap = new Map((canchas as any[]).map(c => [c.id_cancha, c]));
+    
+    return reservas.map(reserva => {
+      const usuario = usuariosMap.get(reserva.id_usuario);
+      const cancha = canchasMap.get(reserva.id_cancha);
+      
+      return {
+        id_reserva: reserva.id_reserva,
+        id_usuario: reserva.id_usuario,
+        usuario_nombre: usuario ? `${usuario.nombre} ${usuario.apellido}` : `Usuario ${reserva.id_usuario}`,
+        id_cancha: reserva.id_cancha,
+        cancha_nombre: cancha ? cancha.nombre : `Cancha ${reserva.id_cancha}`,
+        fecha: reserva.fecha,
+        hora_inicio: reserva.hora_inicio,
+        hora_fin: reserva.hora_fin,
+        precio_total: reserva.precio_total,
+        servicios: reserva.servicios && reserva.servicios.length > 0 
+          ? reserva.servicios.map((s: any) => s.nombre).join(', ')
+          : '-'
+      };
+    });
   }
 
+  // 🔹 Obtener reserva por ID con información completa
   async obtenerPorIdConServicios(id_reserva: number) {
-    return this.repository.findByIdWithServicios(id_reserva);
+    const reserva = await this.repository.findByIdWithServicios(id_reserva);
+    if (reserva) {
+      // Obtener información de usuario y cancha
+      const [usuarios] = await pool.query('SELECT id_usuario, nombre, apellido FROM usuario WHERE id_usuario = ?', [reserva.id_usuario]);
+      const [canchas] = await pool.query('SELECT id_cancha, nombre FROM cancha WHERE id_cancha = ?', [reserva.id_cancha]);
+      
+      const usuario = (usuarios as any[])[0];
+      const cancha = (canchas as any[])[0];
+      
+      return {
+        ...reserva,
+        usuario_nombre: usuario ? `${usuario.nombre} ${usuario.apellido}` : `Usuario ${reserva.id_usuario}`,
+        cancha_nombre: cancha ? cancha.nombre : `Cancha ${reserva.id_cancha}`,
+        servicios: reserva.servicios && reserva.servicios.length > 0 
+          ? reserva.servicios.map((s: any) => s.nombre).join(', ')
+          : '-'
+      };
+    }
+    return null;
   }
 
-  async agregarServicios(id_reserva: number, id_servicios: number[]) {
-    // Sumar precios de servicios
-    const [rowsServicios] = await pool.query(`SELECT precio FROM servicio WHERE id_servicio IN (${id_servicios.join(',')})`);
-    const sumaServicios = (rowsServicios as any[]).reduce((acc, s) => acc + s.precio, 0);
+  // 🔹 Actualizar reserva con cálculo automático
+  async actualizarReserva(reservaData: any): Promise<Reserva> {
+    // Obtener servicios actuales de la reserva
+    const serviciosActuales = await this.repository.findServiciosByReserva(reservaData.id_reserva);
+    const id_servicios_actuales = serviciosActuales.map(s => s.id_servicio);
+    
+    // Combinar servicios existentes con los nuevos si se proporcionan
+    const id_servicios = reservaData.id_servicios || id_servicios_actuales;
 
-    // Actualizar precio total
-    await pool.query('UPDATE reserva SET precio_total = precio_total + ? WHERE id_reserva = ?', [sumaServicios, id_reserva]);
+    // Calcular precio total automáticamente
+    const precio_total = await this.calcularPrecioTotal({
+      id_cancha: reservaData.id_cancha,
+      fecha: reservaData.fecha,
+      hora_inicio: reservaData.hora_inicio,
+      hora_fin: reservaData.hora_fin,
+      id_servicios: id_servicios
+    });
+
+    // CORREGIDO: asegurar que el precio es un número válido
+    const precioTotalFinal = Number(precio_total.toFixed(2));
+
+    console.log(`✅ Reserva actualizada - Precio total: ${precioTotalFinal}`);
+
+    // Actualizar reserva
+    const reservaActualizada: Reserva = {
+      id_reserva: reservaData.id_reserva,
+      id_usuario: reservaData.id_usuario,
+      id_cancha: reservaData.id_cancha,
+      fecha: reservaData.fecha,
+      hora_inicio: reservaData.hora_inicio,
+      hora_fin: reservaData.hora_fin,
+      precio_total: precioTotalFinal
+    };
+
+    await this.repository.actualizar(reservaActualizada);
+
+    // Actualizar servicios si se proporcionaron nuevos
+    if (reservaData.id_servicios) {
+      // Eliminar servicios actuales
+      await pool.query('DELETE FROM reserva_servicio WHERE id_reserva = ?', [reservaData.id_reserva]);
+      
+      // Agregar nuevos servicios
+      if (reservaData.id_servicios.length > 0) {
+        await this.repository.addServicios(reservaData.id_reserva, reservaData.id_servicios);
+      }
+    }
+
+    return reservaActualizada;
+  }
+
+  // 🔹 Calcular precio en tiempo real (para el frontend) - CORREGIDO
+  async calcularPrecioEnTiempoReal(data: {
+    id_cancha: number;
+    fecha: string;
+    hora_inicio: string;
+    hora_fin: string;
+    id_servicios: number[];
+  }): Promise<{ precio_total: number; precio_cancha: number; precio_servicios: number }> {
+    const precioPorHora = await this.obtenerPrecioVigente(data.id_cancha, data.fecha);
+    const horas = this.calcularHoras(data.hora_inicio, data.hora_fin);
+    const precio_cancha = Number((precioPorHora * horas).toFixed(2));
+
+    let precio_servicios = 0;
+    if (data.id_servicios && data.id_servicios.length > 0) {
+      const placeholders = data.id_servicios.map(() => '?').join(',');
+      const [rowsServicios] = await pool.query(
+        `SELECT precio_servicio FROM servicio WHERE id_servicio IN (${placeholders})`,
+        data.id_servicios
+      );
+      
+      // CORREGIDO: asegurar que se suman números
+      precio_servicios = (rowsServicios as any[]).reduce((acc, s) => {
+        const precio = Number(s.precio_servicio) || 0;
+        return acc + precio;
+      }, 0);
+      
+      precio_servicios = Number(precio_servicios.toFixed(2));
+    }
+
+    const precio_total = Number((precio_cancha + precio_servicios).toFixed(2));
+
+    console.log(`💰 Cálculo tiempo real - Cancha: ${precio_cancha}, Servicios: ${precio_servicios}, Total: ${precio_total}`);
+
+    return {
+      precio_total,
+      precio_cancha,
+      precio_servicios
+    };
+  }
+
+  // Mantener los demás métodos igual...
+  async agregarServicios(id_reserva: number, id_servicios: number[]): Promise<void> {
+    // Sumar precios de servicios
+    if (id_servicios.length > 0) {
+      const placeholders = id_servicios.map(() => '?').join(',');
+      const [rowsServicios] = await pool.query(
+        `SELECT precio_servicio FROM servicio WHERE id_servicio IN (${placeholders})`,
+        id_servicios
+      );
+      
+      // CORREGIDO: asegurar que se suman números
+      const sumaServicios = (rowsServicios as any[]).reduce((acc, s) => {
+        const precio = Number(s.precio_servicio) || 0;
+        return acc + precio;
+      }, 0);
+
+      // Actualizar precio total
+      await pool.query(
+        'UPDATE reserva SET precio_total = precio_total + ? WHERE id_reserva = ?', 
+        [sumaServicios, id_reserva]
+      );
+    }
 
     // Guardar servicios
     return this.repository.addServicios(id_reserva, id_servicios);
@@ -53,36 +276,24 @@ export class ReservaService {
 
   async eliminarServicio(id_reserva: number, id_servicio: number) {
     // Obtener precio del servicio
-    const [rows] = await pool.query('SELECT precio FROM servicio WHERE id_servicio = ?', [id_servicio]);
-    const servicio = (rows as any[])[0];
-
-    // Actualizar precio total
-    await pool.query('UPDATE reserva SET precio_total = precio_total - ? WHERE id_reserva = ?', [servicio.precio, id_reserva]);
+    const [rows] = await pool.query('SELECT precio_servicio FROM servicio WHERE id_servicio = ?', [id_servicio]);
+    const servicios = rows as any[];
+    
+    if (servicios.length > 0) {
+      const servicio = servicios[0];
+      const precio = Number(servicio.precio_servicio) || 0;
+      // Actualizar precio total
+      await pool.query('UPDATE reserva SET precio_total = precio_total - ? WHERE id_reserva = ?', [precio, id_reserva]);
+    }
 
     return this.repository.removeServicio(id_reserva, id_servicio);
   }
 
-  async eliminarReserva(id_reserva: number) {
-    return this.repository.delete(id_reserva, 0, 0); // Podés ajustar id_usuario/id_cancha si querés
+ async eliminarReserva(id_reserva: number) {
+    // CORREGIDO: Solo pasar el id_reserva
+    return this.repository.delete(id_reserva);
   }
 
-  async actualizarReserva(reserva: Reserva) {
-    // Recalcular precio cancha
-    const horaInicio = Number(reserva.hora_inicio.split(':')[0]);
-    const horaFin = Number(reserva.hora_fin.split(':')[0]);
-    const horas = horaFin - horaInicio || 1;
-    const [rowsCancha] = await pool.query('SELECT precio_por_hora FROM cancha WHERE id_cancha = ?', [reserva.id_cancha]);
-    const cancha = (rowsCancha as any[])[0];
-    let precio_total = cancha.precio_por_hora * horas;
-
-    // Precio servicios
-    const servicios = await this.repository.findServiciosByReserva(reserva.id_reserva);
-    precio_total += servicios.reduce((acc, s) => acc + s.precio, 0);
-
-    reserva.precio_total = precio_total;
-
-    return this.repository.actualizar(reserva);
-  }
   async obtenerServicios(id_reserva: number) {
     return this.repository.findServiciosByReserva(id_reserva);
   }

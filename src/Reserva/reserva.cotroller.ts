@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ReservaService } from '../reserva/reserva';
+import { ReservaService } from '../Reserva/reserva';
 
 export class ReservaController {
   private service: ReservaService;
@@ -44,22 +44,48 @@ export class ReservaController {
   }
 
   async actualizarReserva(req: Request, res: Response) {
-    const reserva = req.body;
-    const updated = await this.service.actualizarReserva(reserva);
-    res.json({ success: true, data: updated });
+    try {
+      const reserva = req.body;
+      const updated = await this.service.actualizarReserva(reserva);
+      res.json({ success: true, data: updated });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
   }
 
   async eliminarReserva(req: Request, res: Response) {
-    const id_reserva = Number(req.params.id);
-    await this.service.eliminarReserva(id_reserva);
-    res.json({ success: true, message: 'Reserva eliminada correctamente' });
+    try {
+      const id_reserva = Number(req.params.id);
+      await this.service.eliminarReserva(id_reserva);
+      res.json({ success: true, message: 'Reserva eliminada correctamente' });
+    } catch (error: any) {
+      console.error('Error eliminando reserva:', error);
+      res.status(500).json({ success: false, message: 'Error al eliminar la reserva' });
+    }
   }
-
- async obtenerServicios(req: Request, res: Response) {
+  
+  async obtenerServicios(req: Request, res: Response) {
     try {
       const id_reserva = Number(req.params.id_reserva);
       const servicios = await this.service.obtenerServicios(id_reserva);
       res.json({ success: true, data: servicios });
+    } catch (error: any) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  // 🔹 NUEVO: Calcular precio en tiempo real
+  async calcularPrecio(req: Request, res: Response) {
+    try {
+      const { id_cancha, fecha, hora_inicio, hora_fin, id_servicios } = req.body;
+      const precio = await this.service.calcularPrecioEnTiempoReal({
+        id_cancha,
+        fecha,
+        hora_inicio,
+        hora_fin,
+        id_servicios: id_servicios || []
+      });
+      res.json({ success: true, data: precio });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message });
     }
