@@ -1,6 +1,6 @@
-import { ServicioRepository } from './servicio.repository';
-import { ServicioCreate, ServicioUpdate } from './servicio.entity';
-import { pool } from '../database/connection';
+import { ServicioRepository } from './servicio.repository.js';
+import { ServicioCreate, ServicioUpdate } from './servicio.entity.js';
+import { pool } from '../database/connection.js';
 
 export class ServicioService {
   private repository: ServicioRepository;

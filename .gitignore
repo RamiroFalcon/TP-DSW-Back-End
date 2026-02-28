@@ -3,9 +3,13 @@ coverage
 
 # API keys and secrets
 .env
+.env.test
 
 # dependency directory
 node_modules
+
+# Archivos de pruebas manuales HTTP
+*.http
 
 # OS metadata
 .DS_Store

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { LocalidadService } from './localidad.js';
+import { LocalidadService } from './localidad.service.js';
 
 export class LocalidadController {
   constructor(private service: LocalidadService) {}

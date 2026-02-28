@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrecioService } from './precio.js';
+import { PrecioService } from './precio.service.js';
 
 export class PrecioController {
   private service: PrecioService;

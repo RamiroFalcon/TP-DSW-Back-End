@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { TipoCanchaService } from './tipo-cancha';
-import { TipoCanchaRepository } from './tipo-cancha.repository';
+import { TipoCanchaService } from './tipo-cancha.service.js';
+import { TipoCanchaRepository } from './tipo-cancha.repository.js';
 
 const repository = new TipoCanchaRepository();
 const service = new TipoCanchaService(repository);

@@ -14,5 +14,6 @@
             "database": "tp",
             "username": "root"
         }
-    ]
+    ],
+    "postman.settings.dotenv-detection-notification-visibility": false
 }

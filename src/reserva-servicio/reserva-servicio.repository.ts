@@ -1,4 +1,4 @@
-import { pool } from '../database/connection';
+import { pool } from '../database/connection.js';
 import { ResultSetHeader } from 'mysql2';
 import { ReservaServicio, ReservaServicioCreate } from './reserva-servicio.entity.js';
 

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { PrecioController } from './precio.controller.js';
-import { PrecioService } from './precio.js';
+import { PrecioService } from './precio.service.js';
 import { PrecioRepository } from './precio.repository.js';
 
 const router = Router();

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { LocalidadController } from './localidad.controller.js';
-import { LocalidadService } from './localidad.js';
+import { LocalidadService } from './localidad.service.js';
 import { LocalidadRepository } from './localidad.repository.js';
 
 const router = Router();

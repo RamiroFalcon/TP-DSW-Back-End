@@ -1,5 +1,5 @@
-import { TipoCanchaRepository } from './tipo-cancha.repository';
-import { TipoCancha, TipoCanchaCreate, TipoCanchaUpdate } from './tipo-cancha.entity';
+import { TipoCanchaRepository } from './tipo-cancha.repository.js';
+import { TipoCancha, TipoCanchaCreate, TipoCanchaUpdate } from './tipo-cancha.entity.js';
 
 export class TipoCanchaService {
   constructor(private repository: TipoCanchaRepository) {}

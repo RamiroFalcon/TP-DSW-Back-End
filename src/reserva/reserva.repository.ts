@@ -1,5 +1,5 @@
-import { pool } from '../database/connection';
-import { Reserva, ReservaCreate, ReservaUpdate } from './reserva.entity';
+import { pool } from '../database/connection.js';
+import { Reserva, ReservaCreate, ReservaUpdate } from './reserva.entity.js';
 import { ResultSetHeader } from 'mysql2';
 
 export class ReservaRepository {

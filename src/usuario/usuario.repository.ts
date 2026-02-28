@@ -1,7 +1,7 @@
-import { pool } from '../database/connection';
-import { Usuario, UsuarioCreate, UsuarioUpdate } from './usuario.entity';
+import { pool } from '../database/connection.js';
+import { Usuario, UsuarioCreate, UsuarioUpdate } from './usuario.entity.js';
 import { ResultSetHeader } from 'mysql2';
-import { RolUsuario } from './usuario.entity';
+import { RolUsuario } from './usuario.entity.js';
 
 export class UsuarioRepository {
   async findAll(): Promise<Usuario[]> {

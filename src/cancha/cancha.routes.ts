@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { CanchaController } from './cancha.controller.js';
-import { CanchaService } from './cancha.js';
+import { CanchaService } from './cancha.service.js';
 import { CanchaRepository } from './cancha.repository.js';
 
 const router = Router();

@@ -1,5 +1,5 @@
-import { CanchaRepository } from './cancha.repository';
-import { Cancha, CanchaCreate, CanchaUpdate } from './cancha.entity';
+import { CanchaRepository } from './cancha.repository.js';
+import { Cancha, CanchaCreate, CanchaUpdate } from './cancha.entity.js';
 
 export class CanchaService {
   constructor(private repository: CanchaRepository) {}

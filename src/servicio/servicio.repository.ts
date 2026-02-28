@@ -1,6 +1,6 @@
-import { pool } from '../database/connection';
+import { pool } from '../database/connection.js';
 import { ResultSetHeader } from 'mysql2';
-import { Servicio, ServicioCreate, ServicioUpdate } from './servicio.entity';
+import { Servicio, ServicioCreate, ServicioUpdate } from './servicio.entity.js';
 
 export class ServicioRepository {
   async findAll(): Promise<Servicio[]> {

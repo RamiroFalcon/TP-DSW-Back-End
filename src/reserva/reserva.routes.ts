@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { ReservaController } from '../reserva/reserva.cotroller';
+import { ReservaController } from '../reserva/reserva.cotroller.js';
 
 const router = Router();
 const controller = new ReservaController();

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { CanchaService } from './cancha';
-import { pool } from '../database/connection'; // ✅ Agregar esta importación
+import { CanchaService } from './cancha.service.js';
+import { pool } from '../database/connection.js'; // ✅ Agregar esta importación
 
 export class CanchaController {
   constructor(private service: CanchaService) {}

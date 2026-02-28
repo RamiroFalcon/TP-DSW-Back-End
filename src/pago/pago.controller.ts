@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PagoService } from '../pago/pago';
+import { PagoService } from './pago.service.js';
 
 export class PagoController {
   constructor(private service: PagoService) {}

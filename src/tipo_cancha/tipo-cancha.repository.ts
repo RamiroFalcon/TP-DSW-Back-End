@@ -1,5 +1,5 @@
-import { pool } from '../database/connection';
-import { TipoCancha, TipoCanchaCreate } from './tipo-cancha.entity';
+import { pool } from '../database/connection.js';
+import { TipoCancha, TipoCanchaCreate } from './tipo-cancha.entity.js';
 import { ResultSetHeader } from 'mysql2';
 
 export class TipoCanchaRepository {

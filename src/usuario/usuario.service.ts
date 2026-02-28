@@ -1,6 +1,6 @@
-import { UsuarioRepository } from '../usuario/usuario.repository';
-import { Usuario, UsuarioCreate, UsuarioUpdate } from './usuario.entity';
-import { RolUsuario } from './usuario.entity';
+import { UsuarioRepository } from './usuario.repository.js';
+import { Usuario, UsuarioCreate, UsuarioUpdate } from './usuario.entity.js';
+import { RolUsuario } from './usuario.entity.js';
 
 export class UsuarioService {
   constructor(private repository: UsuarioRepository) {}

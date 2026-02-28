@@ -1,5 +1,5 @@
-import { pool } from '../database/connection';
-import { Pago, PagoCreate, PagoUpdate } from './pago.entity';
+import { pool } from '../database/connection.js';
+import { Pago, PagoCreate, PagoUpdate } from './pago.entity.js';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 export class PagoRepository {

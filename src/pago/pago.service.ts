@@ -1,5 +1,5 @@
-import { PagoRepository } from './pago.repository';
-import { Pago, PagoCreate, PagoUpdate } from './pago.entity';
+import { PagoRepository } from './pago.repository.js';
+import { Pago, PagoCreate, PagoUpdate } from './pago.entity.js';
 
 export class PagoService {
   constructor(private repository: PagoRepository) {}

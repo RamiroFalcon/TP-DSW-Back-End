@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { UsuarioService } from '../usuario/usuario';
-import { RolUsuario } from '../usuario/usuario.entity';
+import { UsuarioService } from './usuario.service.js';
+import { RolUsuario } from '../usuario/usuario.entity.js';
 
 
 export class UsuarioController {

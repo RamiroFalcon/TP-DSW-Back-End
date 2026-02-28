@@ -1,6 +1,6 @@
-import { ReservaRepository } from './reserva.repository';
-import { ReservaCreate, Reserva } from './reserva.entity';
-import { pool } from '../database/connection';
+import { ReservaRepository } from './reserva.repository.js';
+import { ReservaCreate, Reserva } from './reserva.entity.js';
+import { pool } from '../database/connection.js';
 
 export class ReservaService {
   private repository: ReservaRepository;

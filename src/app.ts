@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger.js';
 import canchaRouter from './cancha/cancha.routes.js';
 import usuarioRouter from './usuario/usuario.routes.js';
 import tipoCanchaRouter from './tipo_cancha/tipo-cancha.routes.js';
@@ -18,7 +20,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/canchas', canchaRouter);
 app.use('/api/usuarios', usuarioRouter);
 app.use('/api/tipo-canchas', tipoCanchaRouter);
@@ -37,6 +39,13 @@ app.use((_, res) => {
   res.status(404).json({ message: 'Endpoint not found' });
 });
 
-app.listen(3000, () => {
-  console.log('✅ Server running on http://localhost:3000');
-});
+export { app }; // ← Agregamos esto
+
+// Solo levanta el servidor si no estamos en tests
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(3000, () => {
+    console.log('✅ Server running on http://localhost:3000');
+  });
+}
+
+

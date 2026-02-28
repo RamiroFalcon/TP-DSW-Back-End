@@ -1,5 +1,5 @@
-import { pool } from '../database/connection';
-import { Cancha, CanchaCreate, CanchaUpdate } from './cancha.entity';
+import { pool } from '../database/connection.js';
+import { Cancha, CanchaCreate, CanchaUpdate } from './cancha.entity.js';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 export class CanchaRepository {

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { obtenerTodos, obtenerPorId, crear, actualizar, eliminar } from './tipo-cancha.controller';
+import { obtenerTodos, obtenerPorId, crear, actualizar, eliminar } from './tipo-cancha.controller.js';
 
 const router = Router();
 
