@@ -8,7 +8,7 @@
 # ⚠️ IMPORTANTE: Primero ejecutar auth-tests.http para obtener tokens
 
 # Tokens (copiar de auth-tests.http después de hacer login)
-@clientToken = PEGAR_TOKEN_CLIENTE_AQUI
+@clientToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZF91c3VhcmlvIjo2LCJ1c2VybmFtZSI6InRlc3R1c2VyIiwicm9sIjoiY2xpZW50ZSIsImlhdCI6MTc3MzM0MTY3MywiZXhwIjoxNzczNDI4MDczfQ.G79aR53w_YOoiPmMk6lKO1H2hVbwJnZGzHVJ16QgdlI
 @adminToken = PEGAR_TOKEN_ADMIN_AQUI
 
 # ═══════════════════════════════════════════════════════════

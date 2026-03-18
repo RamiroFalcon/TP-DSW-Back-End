@@ -1,52 +1,31 @@
+import { AppDataSource } from '../database/data-source.js';
 import { Localidad, LocalidadCreate } from './localidad.entity.js';
-import { pool } from '../database/connection.js';
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 export class LocalidadRepository {
+  private repository = AppDataSource.getRepository(Localidad);
 
   async create(data: LocalidadCreate): Promise<Localidad> {
-    const [result] = await pool.query<ResultSetHeader>(
-      'INSERT INTO localidad (nombre) VALUES (?)',
-      [data.nombre]
-    );
-    
-    return {
-      id: result.insertId,
-      nombre: data.nombre
-    };
+    const localidad = this.repository.create(data);
+    return this.repository.save(localidad);
   }
 
   async findAll(): Promise<Localidad[]> {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT id_localidad as id, nombre FROM localidad'
-    );
-    return rows as Localidad[];
+    return this.repository.find();
   }
 
   async findById(id: number): Promise<Localidad | undefined> {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT id_localidad as id, nombre FROM localidad WHERE id_localidad = ?',
-      [id]
-    );
-    return rows[0] as Localidad | undefined;
+    const localidad = await this.repository.findOne({ where: { id } });
+    return localidad ?? undefined;
   }
 
   async update(id: number, nombre: string): Promise<Localidad | null> {
-    const [result] = await pool.query<ResultSetHeader>(
-      'UPDATE localidad SET nombre = ? WHERE id_localidad = ?',
-      [nombre, id]
-    );
-    
-    if (result.affectedRows === 0) return null;
-    
-    return await this.findById(id) || null;
+    await this.repository.update(id, { nombre });
+    const localidad = await this.repository.findOne({ where: { id } });
+    return localidad ?? null;
   }
 
   async delete(id: number): Promise<boolean> {
-    const [result] = await pool.query<ResultSetHeader>(
-      'DELETE FROM localidad WHERE id_localidad = ?',
-      [id]
-    );
-    return result.affectedRows > 0;
+    const result = await this.repository.delete(id);
+    return (result.affected ?? 0) > 0;
   }
 }

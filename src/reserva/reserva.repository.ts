@@ -1,136 +1,112 @@
-import { pool } from '../database/connection.js';
+import { AppDataSource } from '../database/data-source.js';
 import { Reserva, ReservaCreate, ReservaUpdate } from './reserva.entity.js';
-import { ResultSetHeader } from 'mysql2';
+import { Servicio } from '../servicio/servicio.entity.js';
+import { In } from 'typeorm';
 
 export class ReservaRepository {
- 
-  async findAll(): Promise<Reserva[]> {
-    const [rows] = await pool.query('SELECT * FROM reserva');
-    return rows as Reserva[];
-  }
+  private repository = AppDataSource.getRepository(Reserva);
+  private servicioRepository = AppDataSource.getRepository(Servicio);
 
+  async findAll(): Promise<Reserva[]> {
+    return this.repository.find({ relations: ['servicios'] });
+  }
 
   async findByIdReserva(id_reserva: number): Promise<Reserva | null> {
-    const [rows] = await pool.query('SELECT * FROM reserva WHERE id_reserva = ?', [id_reserva]);
-    const result = rows as Reserva[];
-    return result.length > 0 ? result[0] : null;
+    return this.repository.findOne({ where: { id_reserva }, relations: ['servicios'] });
   }
-
 
   async findByUsuario(id_usuario: number): Promise<Reserva[]> {
-    const [rows] = await pool.query('SELECT * FROM reserva WHERE id_usuario = ?', [id_usuario]);
-    return rows as Reserva[];
+    return this.repository.find({ where: { id_usuario }, relations: ['servicios'] });
   }
 
-  
   async findByCancha(id_cancha: number): Promise<Reserva[]> {
-    const [rows] = await pool.query('SELECT * FROM reserva WHERE id_cancha = ?', [id_cancha]);
-    return rows as Reserva[];
+    return this.repository.find({ where: { id_cancha }, relations: ['servicios'] });
   }
 
- 
   async findByFecha(fecha: string): Promise<Reserva[]> {
-    const [rows] = await pool.query('SELECT * FROM reserva WHERE fecha = ?', [fecha]);
-    return rows as Reserva[];
+    return this.repository.find({ where: { fecha }, relations: ['servicios'] });
   }
 
-  
-  async findByRangoFecha(fecha_inicio: string, fecha_fin: string): Promise<any[]> {
-    const [rows] = await pool.query(
-      `
-      SELECT 
-        c.id_cancha,
-        r.hora_inicio,
-        r.hora_fin,
-        u.nombre AS nombre_cliente,
-        u.apellido AS apellido_cliente
-      FROM reserva r
-      JOIN cancha c ON r.id_cancha = c.id_cancha
-      JOIN usuario u ON r.id_usuario = u.id_usuario
-      WHERE r.fecha BETWEEN ? AND ?
-      ORDER BY r.fecha, r.hora_inicio
-      `,
-      [fecha_inicio, fecha_fin]
-    );
-    return rows as any[];
+  async findByRangoFecha(fecha_inicio: string, fecha_fin: string): Promise<Reserva[]> {
+    return this.repository
+      .createQueryBuilder('reserva')
+      .leftJoinAndSelect('reserva.servicios', 'servicios')
+      .where('reserva.fecha BETWEEN :fecha_inicio AND :fecha_fin', { fecha_inicio, fecha_fin })
+      .getMany();
   }
 
   async create(data: ReservaCreate): Promise<Reserva> {
-    const { id_usuario, id_cancha, fecha, hora_inicio, hora_fin, precio_total } = data;
-    const [result] = await pool.query<ResultSetHeader>(
-      'INSERT INTO reserva (id_usuario, id_cancha, fecha, hora_inicio, hora_fin, precio_total) VALUES (?, ?, ?, ?, ?, ?)',
-      [id_usuario, id_cancha, fecha, hora_inicio, hora_fin, precio_total]
-    );
-    const id_reserva = result.insertId;
+    const servicios = data.id_servicios
+      ? await this.servicioRepository.find({ where: { id_servicio: In(data.id_servicios) } })
+      : [];
 
-   
-    if (data.id_servicios && data.id_servicios.length > 0) {
-      for (const id_servicio of data.id_servicios) {
-        await pool.query('INSERT INTO reserva_servicio (id_reserva, id_servicio) VALUES (?, ?)', [id_reserva, id_servicio]);
-      }
-    }
-
-    return { id_reserva, ...data };
+    const reserva = this.repository.create({
+      ...data,
+      servicios
+    });
+    return this.repository.save(reserva);
   }
 
-
   async actualizar(reserva: Reserva): Promise<Reserva> {
-    await pool.query(
-      'UPDATE reserva SET hora_inicio = ?, hora_fin = ?, fecha = ?, precio_total = ? WHERE id_reserva = ?',
-      [reserva.hora_inicio, reserva.hora_fin, reserva.fecha, reserva.precio_total, reserva.id_reserva]
-    );
+    return this.repository.save(reserva);
+  }
+
+  async update(id_reserva: number, data: ReservaUpdate): Promise<Reserva | null> {
+    const { id_servicios, ...updateData } = data;
+    
+    await this.repository.update({ id_reserva }, updateData);
+    
+    const reserva = await this.repository.findOne({ where: { id_reserva }, relations: ['servicios'] });
+    if (!reserva) return null;
+
+    if (id_servicios && id_servicios.length > 0) {
+      const servicios = await this.servicioRepository.find({
+        where: { id_servicio: In(id_servicios) }
+      });
+      reserva.servicios = servicios;
+      return this.repository.save(reserva);
+    }
+
     return reserva;
   }
 
-   async delete(id_reserva: number): Promise<void> {
- 
-    await pool.query('DELETE FROM reserva_servicio WHERE id_reserva = ?', [id_reserva]);
-   
-    await pool.query('DELETE FROM reserva WHERE id_reserva = ?', [id_reserva]);
+  async delete(id_reserva: number): Promise<void> {
+    await this.repository.delete(id_reserva);
   }
-
 
   async addServicios(id_reserva: number, id_servicios: number[]): Promise<void> {
-    for (const id_servicio of id_servicios) {
-      await pool.query('INSERT INTO reserva_servicio (id_reserva, id_servicio) VALUES (?, ?)', [id_reserva, id_servicio]);
-    }
+    const reserva = await this.findByIdReserva(id_reserva);
+    if (!reserva) throw new Error('Reserva no encontrada');
+
+    const servicios = await this.servicioRepository.find({
+      where: { id_servicio: In(id_servicios) }
+    });
+    
+    const existentes = new Set(reserva.servicios?.map(s => s.id_servicio) || []);
+    const nuevoServicios = servicios.filter(s => !existentes.has(s.id_servicio));
+    
+    reserva.servicios = [...(reserva.servicios || []), ...nuevoServicios];
+    await this.repository.save(reserva);
   }
 
- 
   async removeServicio(id_reserva: number, id_servicio: number): Promise<void> {
-    await pool.query('DELETE FROM reserva_servicio WHERE id_reserva = ? AND id_servicio = ?', [id_reserva, id_servicio]);
+    const reserva = await this.findByIdReserva(id_reserva);
+    if (!reserva) throw new Error('Reserva no encontrada');
+
+    reserva.servicios = reserva.servicios?.filter(s => s.id_servicio !== id_servicio) || [];
+    await this.repository.save(reserva);
   }
 
-
-  async findServiciosByReserva(id_reserva: number): Promise<any[]> {
-    const [rows] = await pool.query(
-      `SELECT s.id_servicio, s.nombre, s.precio_servicio as precio
-       FROM servicio s
-       JOIN reserva_servicio rs ON s.id_servicio = rs.id_servicio
-       WHERE rs.id_reserva = ?`,
-      [id_reserva]
-    );
-    return rows as any[];
+  async findServiciosByReserva(id_reserva: number): Promise<Servicio[]> {
+    const reserva = await this.findByIdReserva(id_reserva);
+    return reserva?.servicios || [];
   }
 
-
-  async findAllWithServicios(): Promise<any[]> {
-    const [reservas] = await pool.query('SELECT * FROM reserva');
-    const reservasConServicios = await Promise.all(
-      (reservas as any[]).map(async (reserva) => {
-        const servicios = await this.findServiciosByReserva(reserva.id_reserva);
-        return { ...reserva, servicios };
-      })
-    );
-    return reservasConServicios;
+  async findAllWithServicios(): Promise<Reserva[]> {
+    return this.repository.find({ relations: ['servicios'] });
   }
 
-  // 🔹➕ NUEVO: Obtener una reserva por ID con servicios
-  async findByIdWithServicios(id_reserva: number): Promise<any | null> {
-    const [rows] = await pool.query('SELECT * FROM reserva WHERE id_reserva = ?', [id_reserva]);
-    const [reserva] = rows as any[];
-    if (!reserva) return null;
-    const servicios = await this.findServiciosByReserva(id_reserva);
-    return { ...reserva, servicios };
+  async findByIdWithServicios(id_reserva: number): Promise<Reserva | null> {
+    return this.repository.findOne({ where: { id_reserva }, relations: ['servicios'] });
   }
 }

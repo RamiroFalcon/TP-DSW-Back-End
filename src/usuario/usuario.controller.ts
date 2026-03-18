@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { UsuarioService } from './usuario.service.js';
-import { RolUsuario } from '../usuario/usuario.entity.js';
+import { RolUsuario } from './usuario.entity.js';
 
 
 export class UsuarioController {
@@ -52,7 +52,7 @@ export class UsuarioController {
 
   obtenerPorDni = async (req: Request, res: Response): Promise<void> => {
     try {
-      const dni = parseInt(req.params.dni);
+      const dni = req.params.dni;
       const usuario = await this.service.obtenerPorDni(dni);
       res.status(200).json({ success: true, data: usuario });
     } catch (error) {
@@ -65,10 +65,11 @@ export class UsuarioController {
 
    obtenerPorRol = async (req: Request, res: Response): Promise<void> => {
     try {
-      const rolParam = req.params.rol as keyof typeof RolUsuario;
+      const rolParam = req.params.rol;
 
       // Validar que el rol exista
-      if (!Object.values(RolUsuario).includes(rolParam as RolUsuario)) {
+      const rolesValidos = Object.values(RolUsuario);
+      if (!rolesValidos.includes(rolParam as RolUsuario)) {
         res.status(400).json({ success: false, message: 'Rol inválido' });
         return;
       }

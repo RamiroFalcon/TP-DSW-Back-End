@@ -1,4 +1,5 @@
-import { PrecioRepository, Precio, PrecioCreate } from './precio.repository.js';
+import { PrecioRepository } from './precio.repository.js';
+import { Precio, PrecioCreate } from './precio.entity.js';
 
 export class PrecioService {
   private repository: PrecioRepository;
@@ -10,11 +11,7 @@ export class PrecioService {
   async crear(precioData: PrecioCreate): Promise<Precio> {
     try {
       console.log('📝 Creando precio:', precioData);
-      const id = await this.repository.create(precioData);
-      const precio = await this.repository.findById(id);
-      if (!precio) {
-        throw new Error('No se pudo crear el precio');
-      }
+      const precio = await this.repository.create(precioData);
       console.log('✅ Precio creado:', precio);
       return precio;
     } catch (error) {
@@ -26,7 +23,7 @@ export class PrecioService {
   async obtenerTodos(): Promise<Precio[]> {
     try {
       console.log('📋 Obteniendo todos los precios');
-      const precios = await this.repository.obtenerTodos();
+      const precios = await this.repository.findAll();
       console.log(`✅ Encontrados ${precios.length} precios`);
       return precios;
     } catch (error) {

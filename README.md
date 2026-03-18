@@ -487,25 +487,6 @@ El sistema calcula automáticamente el precio total de una reserva considerando:
 - **cors** - Habilitación de CORS
 - **swagger-jsdoc / swagger-ui-express** - Documentación API
 
----
-
-## Contribuir
-
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
----
-
-## Licencia
-
-ISC
-
----
-
-## Contacto
 
 **Repositorio:** [github.com/RamiroFalcon/TP-DSW-Back-End](https://github.com/RamiroFalcon/TP-DSW-Back-End)
 

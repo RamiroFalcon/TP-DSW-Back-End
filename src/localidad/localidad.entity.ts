@@ -1,7 +1,12 @@
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
-export interface Localidad {
-  id: number;
-  nombre: string;
+@Entity('localidad')
+export class Localidad {
+  @PrimaryGeneratedColumn({ name: 'id_localidad' })
+  id!: number;
+
+  @Column({ name: 'nombre', type: 'varchar', length: 100 })
+  nombre!: string;
 }
 
 export interface LocalidadCreate {

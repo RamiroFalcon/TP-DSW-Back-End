@@ -1,60 +1,68 @@
-import { pool } from '../database/connection.js';
+import { AppDataSource } from '../database/data-source.js';
 import { Pago, PagoCreate, PagoUpdate } from './pago.entity.js';
-import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 export class PagoRepository {
+  private repository = AppDataSource.getRepository(Pago);
+
   async create(data: PagoCreate): Promise<Pago> {
-    const [result] = await pool.query<ResultSetHeader>(
-      `INSERT INTO pago (id_reserva, monto, estado, metodo_pago, fecha_creacion, fecha_actualizacion) 
-       VALUES (?, ?, 'pendiente', ?, NOW(), NOW())`,
-      [data.id_reserva, data.monto, data.metodo_pago || 'tarjeta']
-    );
-
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM pago WHERE id_pago = ?',
-      [result.insertId]
-    );
-
-    return rows[0] as Pago;
+    const pago = this.repository.create({
+      ...data,
+      estado: 'pendiente'
+    });
+    return this.repository.save(pago);
   }
 
   async findById(id_pago: number): Promise<Pago | null> {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM pago WHERE id_pago = ?',
-      [id_pago]
-    );
-    return rows.length ? (rows[0] as Pago) : null;
+    return this.repository.findOne({
+      where: { id_pago },
+      relations: ['reserva']
+    });
   }
 
   async findByReserva(id_reserva: number): Promise<Pago | null> {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM pago WHERE id_reserva = ? ORDER BY fecha_creacion DESC LIMIT 1',
-      [id_reserva]
-    );
-    return rows.length ? (rows[0] as Pago) : null;
+    return this.repository.findOne({
+      where: { id_reserva },
+      relations: ['reserva'],
+      order: { fecha_creacion: 'DESC' }
+    });
   }
 
-  async update(id_pago: number, data: PagoUpdate): Promise<Pago> {
-    const [result] = await pool.query<ResultSetHeader>(
-      `UPDATE pago SET estado = ?, transaccion_id = ?, fecha_actualizacion = NOW() 
-       WHERE id_pago = ?`,
-      [data.estado, data.transaccion_id, id_pago]
-    );
-
-    if (result.affectedRows === 0) {
-      throw new Error('Pago no encontrado');
-    }
-
-    const pago = await this.findById(id_pago);
-    if (!pago) throw new Error('Pago no encontrado después de actualizar');
-    
-    return pago;
+  async findAllByReserva(id_reserva: number): Promise<Pago[]> {
+    return this.repository.find({
+      where: { id_reserva },
+      relations: ['reserva'],
+      order: { fecha_creacion: 'DESC' }
+    });
   }
 
-  async updateEstadoByReserva(id_reserva: number, estado: Pago['estado']): Promise<void> {
-    await pool.query(
-      'UPDATE pago SET estado = ?, fecha_actualizacion = NOW() WHERE id_reserva = ?',
-      [estado, id_reserva]
-    );
+  async findByEstado(estado: 'pendiente' | 'completado' | 'fallido' | 'reembolsado'): Promise<Pago[]> {
+    return this.repository.find({
+      where: { estado },
+      relations: ['reserva'],
+      order: { fecha_creacion: 'DESC' }
+    });
+  }
+
+  async update(id_pago: number, data: PagoUpdate): Promise<Pago | null> {
+    await this.repository.update({ id_pago }, data);
+    return this.repository.findOne({
+      where: { id_pago },
+      relations: ['reserva']
+    });
+  }
+
+  async updateEstadoByReserva(id_reserva: number, estado: string): Promise<void> {
+    await this.repository.update({ id_reserva }, { estado: estado as any });
+  }
+
+  async delete(id_pago: number): Promise<void> {
+    await this.repository.delete({ id_pago });
+  }
+
+  async findAll(): Promise<Pago[]> {
+    return this.repository.find({
+      relations: ['reserva'],
+      order: { fecha_creacion: 'DESC' }
+    });
   }
 }

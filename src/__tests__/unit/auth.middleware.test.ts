@@ -14,7 +14,7 @@ const mockRes = () => {
 };
 const mockNext = () => jest.fn() as NextFunction;
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 
 describe('authenticateToken', () => {
 
@@ -26,8 +26,8 @@ describe('authenticateToken', () => {
 
     authenticateToken(req, res, next);
 
-    expect(next).toHaveBeenCalled();        // ✅ Pasó al siguiente middleware
-    expect(req.user).toBeDefined();         // ✅ Se guardó el usuario
+    expect(next).toHaveBeenCalled();        // Pasó al siguiente middleware
+    expect(req.user).toBeDefined();         //  Se guardó el usuario
     expect(req.user?.username).toBe('testuser');
   });
 
@@ -38,7 +38,7 @@ describe('authenticateToken', () => {
 
     authenticateToken(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(401); // ❌ Sin token = 401
+    expect(res.status).toHaveBeenCalledWith(401); //  Sin token = 401
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -49,13 +49,13 @@ describe('authenticateToken', () => {
 
     authenticateToken(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(403); // ❌ Token inválido = 403
+    expect(res.status).toHaveBeenCalledWith(403); //  Token inválido = 403
     expect(next).not.toHaveBeenCalled();
   });
 
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 
 describe('requireAdmin', () => {
 
@@ -66,7 +66,7 @@ describe('requireAdmin', () => {
 
     requireAdmin(req, res, next);
 
-    expect(next).toHaveBeenCalled(); // ✅ Admin pasa
+    expect(next).toHaveBeenCalled(); //  Admin pasa
   });
 
   test('debe rechazar acceso a clientes', () => {
@@ -76,7 +76,7 @@ describe('requireAdmin', () => {
 
     requireAdmin(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(403); // ❌ Cliente bloqueado
+    expect(res.status).toHaveBeenCalledWith(403); //  Cliente bloqueado
     expect(next).not.toHaveBeenCalled();
   });
 

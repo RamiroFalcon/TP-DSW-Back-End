@@ -102,7 +102,7 @@ CREATE TABLE `usuario` (
 
 LOCK TABLES `usuario` WRITE;
 /*!40000 ALTER TABLE `usuario` DISABLE KEYS */;
-INSERT INTO `usuario` VALUES (1,1,'12345678','Martin','Palermo','cliente','cliente','cliente123','cliente@turnosport.com'),(2,2,'87654321','Juan','Perez','administrador','admin','admin123',NULL),(3,3,'11223344','Exequiel','Zeballos','cliente','cliente2','cliente321','cliente2@turnosport.com'),(4,2,'43041113','Martina','Fernandez','administrador','martina','marti123','martina@gmail.com');
+INSERT INTO `usuario` VALUES (1,1,'12345678','Martin','Palermo','cliente','cliente','$2b$10$zSSldITAmqI8mY.Kjg1Q5eJsfAoZIKfy3WF8MsBSb9dHm7T9pguIq','cliente@turnosport.com'),(2,2,'87654321','Juan','Perez','administrador','admin','$2b$10$7qsC4TYfV89WG2hXIjdnKO32IKo86Q9qRDQ.7MMt4viV0SG3jxtUm',NULL),(3,3,'11223344','Exequiel','Zeballos','cliente','cliente2','$2b$10$t87YGpInI10/Nhjx3thVc.tv7EZYtXWKGiqgp7/e1Oie7XyyFENDS','cliente2@turnosport.com'),(4,2,'43041113','Martina','Fernandez','administrador','martina','$2b$10$yipYKxTYhNkyvfeKhwqAKeTGob3zbXwMqeFNh9jzLPFJ4pZ/CJGd2','martina@gmail.com');
 /*!40000 ALTER TABLE `usuario` ENABLE KEYS */;
 UNLOCK TABLES;
 

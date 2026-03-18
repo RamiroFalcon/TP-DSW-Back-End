@@ -76,7 +76,9 @@ export class ServicioService {
   }
 
   async asignarServiciosAReserva(id_reserva: number, id_servicios: number[]) {
-    return this.repository.asignarAReserva(id_reserva, id_servicios);
+    // Este método ha sido migrado a ReservaRepository.addServicios()
+    // La relación ManyToMany se maneja directamente en la entidad Reserva
+    throw new Error('Use ReservaRepository.addServicios() instead');
   }
 
   async obtenerServiciosDeReserva(id_reserva: number) {

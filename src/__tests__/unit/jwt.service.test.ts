@@ -14,7 +14,7 @@ describe('JwtService', () => {
     jwtService = new JwtService();
   });
 
-  // ─── generateToken ──────────────────────────────────────────────────────────
+  //  generateToken 
 
   describe('generateToken', () => {
     test('debe generar un token JWT con formato válido (3 partes separadas por puntos)', () => {
@@ -44,7 +44,7 @@ describe('JwtService', () => {
     });
   });
 
-  // ─── verifyToken ────────────────────────────────────────────────────────────
+  // verifyToken 
 
   describe('verifyToken', () => {
     test('debe retornar el payload original al verificar un token válido', () => {
@@ -79,7 +79,7 @@ describe('JwtService', () => {
     });
   });
 
-  // ─── decodeToken ────────────────────────────────────────────────────────────
+  // decodeToken 
 
   describe('decodeToken', () => {
     test('debe decodificar el token sin verificar la firma', () => {

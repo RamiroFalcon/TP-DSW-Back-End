@@ -1,82 +1,69 @@
-import { pool } from '../database/connection.js';
+import { AppDataSource } from '../database/data-source.js';
 import { Cancha, CanchaCreate, CanchaUpdate } from './cancha.entity.js';
-import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 export class CanchaRepository {
+  private repository = AppDataSource.getRepository(Cancha);
+
   async findAll(): Promise<Cancha[]> {
-    const [rows] = await pool.query<RowDataPacket[]>('SELECT * FROM cancha');
-    return rows as Cancha[];
+    return this.repository.find({ relations: ['tipo_cancha', 'localidad'] });
   }
 
-  async findById(id: number): Promise<Cancha | null> {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM cancha WHERE id_cancha = ?',
-      [id]
-    );
-    const canchas = rows as Cancha[];
-    return canchas.length ? canchas[0] : null;
+  async findById(id_cancha: number): Promise<Cancha | null> {
+    return this.repository.findOne({
+      where: { id_cancha },
+      relations: ['tipo_cancha', 'localidad']
+    });
   }
 
   async findByTipo(id_tipo: number): Promise<Cancha[]> {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM cancha WHERE id_tipo = ?',
-      [id_tipo]
-    );
-    return rows as Cancha[];
+    return this.repository.find({
+      where: { id_tipo },
+      relations: ['tipo_cancha', 'localidad']
+    });
+  }
+
+  async findByLocalidad(id_localidad: number): Promise<Cancha[]> {
+    return this.repository.find({
+      where: { id_localidad },
+      relations: ['tipo_cancha', 'localidad']
+    });
+  }
+
+  async findByEstado(estado: 'disponible' | 'ocupada' | 'mantenimiento'): Promise<Cancha[]> {
+    return this.repository.find({
+      where: { estado },
+      relations: ['tipo_cancha', 'localidad']
+    });
   }
 
   async create(data: CanchaCreate): Promise<Cancha> {
-    const [result] = await pool.query<ResultSetHeader>(
-      'INSERT INTO cancha (nombre, estado, id_tipo, id_localidad, precio, hora_apertura, hora_cierre) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [
-        data.nombre,
-        data.estado || 'disponible',
-        data.id_tipo,
-        data.id_localidad,
-        data.precio_hora || 0,
-        data.hora_apertura || '08:00:00',
-        data.hora_cierre || '22:00:00'
-      ]
-    );
-
-    return {
-      id_cancha: result.insertId,
-      nombre: data.nombre,
-      estado: data.estado || 'disponible',
-      id_tipo: data.id_tipo,
-      id_localidad: data.id_localidad,
-      precio_hora: data.precio_hora || 0,
-      hora_apertura: data.hora_apertura || '08:00:00',
-      hora_cierre: data.hora_cierre || '22:00:00'
-    };
+    const cancha = this.repository.create(data);
+    return this.repository.save(cancha);
   }
 
-  async update(id: number, datos: Partial<Cancha>): Promise<Cancha> {
-    const [result] = await pool.query<ResultSetHeader>(
-      'UPDATE cancha SET ? WHERE id_cancha = ?',
-      [datos, id]
-    );
-
-    if (result.affectedRows === 0) {
-      throw new Error('Cancha no encontrada');
-    }
-
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM cancha WHERE id_cancha = ?',
-      [id]
-    );
-
-    return (rows as Cancha[])[0];
+  async update(id_cancha: number, data: CanchaUpdate): Promise<Cancha | null> {
+    await this.repository.update({ id_cancha }, data);
+    return this.repository.findOne({
+      where: { id_cancha },
+      relations: ['tipo_cancha', 'localidad']
+    });
   }
 
-  async delete(id: number): Promise<void> {
-    const [result] = await pool.query<ResultSetHeader>(
-      'DELETE FROM cancha WHERE id_cancha = ?',
-      [id]
-    );
+  async delete(id_cancha: number): Promise<void> {
+    await this.repository.delete({ id_cancha });
+  }
 
-    if (result.affectedRows === 0) {
-      throw new Error('Cancha no encontrada');
-    }
+  async findByNombre(nombre: string): Promise<Cancha | null> {
+    return this.repository.findOne({
+      where: { nombre },
+      relations: ['tipo_cancha', 'localidad']
+    });
+  }
+
+  async findDisponibles(): Promise<Cancha[]> {
+    return this.repository.find({
+      where: { estado: 'disponible' },
+      relations: ['tipo_cancha', 'localidad']
+    });
   }
 }

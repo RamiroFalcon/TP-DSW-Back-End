@@ -25,16 +25,20 @@ export class PagoService {
   }
 
   async procesarPago(id_pago: number, transaccion_id: string): Promise<Pago> {
-    return this.repository.update(id_pago, {
+    const pago = await this.repository.update(id_pago, {
       estado: 'completado',
       transaccion_id
     });
+    if (!pago) throw new Error('Pago no encontrado');
+    return pago;
   }
 
   async fallarPago(id_pago: number): Promise<Pago> {
-    return this.repository.update(id_pago, {
+    const pago = await this.repository.update(id_pago, {
       estado: 'fallido'
     });
+    if (!pago) throw new Error('Pago no encontrado');
+    return pago;
   }
 
   async simularProcesoPago(id_pago: number): Promise<Pago> {
@@ -51,12 +55,14 @@ export class PagoService {
               estado: 'completado',
               transaccion_id
             });
-            resolve(pago);
+            if (!pago) reject(new Error('Pago no encontrado'));
+            else resolve(pago);
           } else {
             const pago = await this.repository.update(id_pago, {
               estado: 'fallido'
             });
-            resolve(pago);
+            if (!pago) reject(new Error('Pago no encontrado'));
+            else resolve(pago);
           }
         } catch (error) {
           reject(error);

@@ -8,16 +8,5 @@ export const pool = mysql.createPool({
   database: process.env.DB_NAME || 'tp',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
 });
-
-// Probar conexión
-(async () => {
-  try {
-    const connection = await pool.getConnection();
-    console.log('✅ Conexión a MySQL exitosa');
-    connection.release();
-  } catch (err) {
-    console.error('❌ Error conectando a MySQL:', err);
-  }
-})();

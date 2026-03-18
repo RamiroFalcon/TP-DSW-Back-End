@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import 'reflect-metadata';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './swagger.js';
@@ -15,6 +16,17 @@ import authRouter from './auth/auth.routes.js';
 import pagoRouter from './pago/pago.routes.js';
 import disponibilidadRouter from './disponibilidad/disponibilidad.routes.js';
 import busquedaCanchaRouter from './busqueda-cancha/busqueda-cancha.routes.js';
+import { AppDataSource } from './database/data-source.js';
+
+
+AppDataSource.initialize()
+  .then(()=> {
+    console.log('TypeORM conectado a MySQL');
+  })
+  .catch((error) => {
+    console.error('Error al conectar con MySQL:', error);
+  });
+
 
 const app = express();
 app.use(express.json());
