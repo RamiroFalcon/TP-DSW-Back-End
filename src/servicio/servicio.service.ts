@@ -1,9 +1,11 @@
 import { ServicioRepository } from './servicio.repository.js';
 import { ServicioCreate, ServicioUpdate } from './servicio.entity.js';
-import { pool } from '../database/connection.js';
+import { AppDataSource } from '../database/data-source.js';
+import { Reserva } from '../reserva/reserva.entity.js';
 
 export class ServicioService {
   private repository: ServicioRepository;
+  private reservaRepository = AppDataSource.getRepository(Reserva);
 
   constructor() {
     this.repository = new ServicioRepository();
@@ -24,54 +26,62 @@ export class ServicioService {
   }
 
   async actualizarServicio(id_servicio: number, data: ServicioUpdate) {
-    // 🔹 ACTUALIZAR PRECIO EN RESERVAS EXISTENTES - CORREGIDO: usar precio_servicio
+    const servicioAnterior = await this.repository.findById(id_servicio);
+    if (!servicioAnterior) {
+      throw new Error('Servicio no encontrado');
+    }
+
+    const oldPrice = Number(servicioAnterior.precio_servicio) || 0;
+
     if (data.precio_servicio !== undefined) {
-      // 1. Obtener el precio anterior
-      const [oldPriceRows] = await pool.query('SELECT precio_servicio FROM servicio WHERE id_servicio = ?', [id_servicio]);
-      const oldPrice = (oldPriceRows as any[])[0]?.precio_servicio;
-      
-      // 2. Actualizar el servicio
       await this.repository.update(id_servicio, data);
-      
-      // 3. Actualizar precio en reservas que tengan este servicio
-      if (oldPrice !== undefined && data.precio_servicio !== undefined) {
-        const diferencia = data.precio_servicio - oldPrice;
-        
-        // Actualizar precio_total en todas las reservas que tengan este servicio
-        await pool.query(
-          `UPDATE reserva r 
-           JOIN reserva_servicio rs ON r.id_reserva = rs.id_reserva 
-           SET r.precio_total = r.precio_total + ? 
-           WHERE rs.id_servicio = ?`,
-          [diferencia, id_servicio]
-        );
+
+      const diferencia = Number(data.precio_servicio) - oldPrice;
+      if (diferencia !== 0) {
+        const reservas = await this.reservaRepository
+          .createQueryBuilder('reserva')
+          .leftJoinAndSelect('reserva.servicios', 'servicio')
+          .where('servicio.id_servicio = :id_servicio', { id_servicio })
+          .getMany();
+
+        for (const reserva of reservas) {
+          reserva.precio_total = Number(reserva.precio_total) + diferencia;
+        }
+
+        if (reservas.length > 0) {
+          await this.reservaRepository.save(reservas);
+        }
       }
     } else {
-      
       await this.repository.update(id_servicio, data);
     }
-    
+
     return { success: true, message: 'Servicio actualizado correctamente' };
   }
 
   async eliminarServicio(id_servicio: number) {
-   
-   
-    const [priceRows] = await pool.query('SELECT precio_servicio FROM servicio WHERE id_servicio = ?', [id_servicio]);
-    const precio = (priceRows as any[])[0]?.precio_servicio;
-    
-    if (precio !== undefined) {
-      //  restar  el precio de las reservas que tengan este servicio
-      await pool.query(
-        `UPDATE reserva r 
-         JOIN reserva_servicio rs ON r.id_reserva = rs.id_reserva 
-         SET r.precio_total = r.precio_total - ? 
-         WHERE rs.id_servicio = ?`,
-        [precio, id_servicio]
-      );
+    const servicio = await this.repository.findById(id_servicio);
+    if (!servicio) {
+      throw new Error('Servicio no encontrado');
     }
-    
-    // eliminar el servicio
+
+    const precio = Number(servicio.precio_servicio) || 0;
+    const reservas = await this.reservaRepository.find({ relations: ['servicios'] });
+
+    for (const reserva of reservas) {
+      const tieneServicio = (reserva.servicios || []).some((s) => s.id_servicio === id_servicio);
+      if (!tieneServicio) {
+        continue;
+      }
+
+      reserva.precio_total = Math.max(0, Number(reserva.precio_total) - precio);
+      reserva.servicios = (reserva.servicios || []).filter((s) => s.id_servicio !== id_servicio);
+    }
+
+    if (reservas.length > 0) {
+      await this.reservaRepository.save(reservas);
+    }
+
     return this.repository.delete(id_servicio);
   }
 

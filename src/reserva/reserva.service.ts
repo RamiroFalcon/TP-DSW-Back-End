@@ -1,9 +1,20 @@
 import { ReservaRepository } from './reserva.repository.js';
 import { ReservaCreate, Reserva } from './reserva.entity.js';
-import { pool } from '../database/connection.js';
+import { AppDataSource } from '../database/data-source.js';
+import { Precio } from '../precio/precio.entity.js';
+import { Cancha } from '../cancha/cancha.entity.js';
+import { Servicio } from '../servicio/servicio.entity.js';
+import { Usuario } from '../usuario/usuario.entity.js';
+import { Pago } from '../pago/pago.entity.js';
+import { In, LessThanOrEqual } from 'typeorm';
 
 export class ReservaService {
   private repository: ReservaRepository;
+  private precioRepository = AppDataSource.getRepository(Precio);
+  private canchaRepository = AppDataSource.getRepository(Cancha);
+  private servicioRepository = AppDataSource.getRepository(Servicio);
+  private usuarioRepository = AppDataSource.getRepository(Usuario);
+  private pagoRepository = AppDataSource.getRepository(Pago);
 
   constructor() {
     this.repository = new ReservaRepository();
@@ -18,30 +29,30 @@ export class ReservaService {
     return Math.max(diffHoras, 1); // Mínimo 1 hora
   }
 
- private async obtenerPrecioVigente(id_cancha: number, fecha: string): Promise<number> {
-  const [rows] = await pool.query(
-    `SELECT valor_por_hora FROM precio 
-     WHERE id_cancha = ? AND fecha_vigencia <= ? 
-     ORDER BY fecha_vigencia DESC LIMIT 1`,
-    [id_cancha, fecha]
-  );
-  
-  const precios = rows as any[];
-  if (precios.length === 0) {
-  
-    const [rowsCancha] = await pool.query(
-      'SELECT precio FROM cancha WHERE id_cancha = ?', 
-      [id_cancha]
-    );
-    const cancha = (rowsCancha as any[])[0];
+  private async obtenerPrecioVigente(id_cancha: number, fecha: string): Promise<number> {
+    const precioVigente = await this.precioRepository.findOne({
+      where: {
+        id_cancha,
+        fecha_vigencia: LessThanOrEqual(fecha),
+      },
+      order: { fecha_vigencia: 'DESC' },
+    });
+
+    if (precioVigente) {
+      return Number(precioVigente.valor_por_hora);
+    }
+
+    const cancha = await this.canchaRepository.findOne({ where: { id_cancha } });
     if (!cancha) {
       throw new Error(`No se encontró la cancha ${id_cancha}`);
     }
-    return cancha.precio; 
+
+    if (cancha.precio_hora == null) {
+      throw new Error(`La cancha ${id_cancha} no tiene precio vigente configurado`);
+    }
+
+    return Number(cancha.precio_hora);
   }
-  
-  return precios[0].valor_por_hora;
-}
   
   private async calcularPrecioTotal(data: {
     id_cancha: number;
@@ -62,18 +73,15 @@ export class ReservaService {
 
     
     if (data.id_servicios && data.id_servicios.length > 0) {
-      const placeholders = data.id_servicios.map(() => '?').join(',');
-      const [rowsServicios] = await pool.query(
-        `SELECT precio_servicio FROM servicio WHERE id_servicio IN (${placeholders})`,
-        data.id_servicios
-      );
-      
-     
-      const sumaServicios = (rowsServicios as any[]).reduce((acc, s) => {
+      const servicios = await this.servicioRepository.find({
+        where: { id_servicio: In(data.id_servicios) },
+      });
+
+      const sumaServicios = servicios.reduce((acc, s) => {
         const precio = Number(s.precio_servicio) || 0;
         return acc + precio;
       }, 0);
-      
+
       precio_total += sumaServicios;
       console.log(`- Cálculo precio - Servicios: ${sumaServicios}, Total servicios: ${data.id_servicios.length}`);
     }
@@ -103,13 +111,20 @@ export class ReservaService {
   
   async obtenerTodasConServicios(): Promise<any[]> {
     const reservas = await this.repository.findAllWithServicios();
-    
-    //  información de usuarios y canchas para mostrar nombres
-    const [usuarios] = await pool.query('SELECT id_usuario, nombre, apellido FROM usuario');
-    const [canchas] = await pool.query('SELECT id_cancha, nombre FROM cancha');
-    
-    const usuariosMap = new Map((usuarios as any[]).map(u => [u.id_usuario, u]));
-    const canchasMap = new Map((canchas as any[]).map(c => [c.id_cancha, c]));
+
+    const idsUsuario = [...new Set(reservas.map((r) => r.id_usuario))];
+    const idsCancha = [...new Set(reservas.map((r) => r.id_cancha))];
+
+    const usuarios = idsUsuario.length
+      ? await this.usuarioRepository.find({ where: { id_usuario: In(idsUsuario) } })
+      : [];
+
+    const canchas = idsCancha.length
+      ? await this.canchaRepository.find({ where: { id_cancha: In(idsCancha) } })
+      : [];
+
+    const usuariosMap = new Map(usuarios.map((u) => [u.id_usuario, u]));
+    const canchasMap = new Map(canchas.map((c) => [c.id_cancha, c]));
     
     return reservas.map(reserva => {
       const usuario = usuariosMap.get(reserva.id_usuario);
@@ -136,12 +151,10 @@ export class ReservaService {
   async obtenerPorIdConServicios(id_reserva: number) {
     const reserva = await this.repository.findByIdWithServicios(id_reserva);
     if (reserva) {
-      // Obtener información de usuario y cancha
-      const [usuarios] = await pool.query('SELECT id_usuario, nombre, apellido FROM usuario WHERE id_usuario = ?', [reserva.id_usuario]);
-      const [canchas] = await pool.query('SELECT id_cancha, nombre FROM cancha WHERE id_cancha = ?', [reserva.id_cancha]);
-      
-      const usuario = (usuarios as any[])[0];
-      const cancha = (canchas as any[])[0];
+      const [usuario, cancha] = await Promise.all([
+        this.usuarioRepository.findOne({ where: { id_usuario: reserva.id_usuario } }),
+        this.canchaRepository.findOne({ where: { id_cancha: reserva.id_cancha } }),
+      ]);
       
       return {
         ...reserva,
@@ -193,14 +206,16 @@ export class ReservaService {
 
     // actualizar servicios si se proporcionaron nuevos
     if (reservaData.id_servicios) {
-
-      // eliminar servicios actuales
-      await pool.query('DELETE FROM reserva_servicio WHERE id_reserva = ?', [reservaData.id_reserva]);
-      
-      // agregar nuevos servicios
-      if (reservaData.id_servicios.length > 0) {
-        await this.repository.addServicios(reservaData.id_reserva, reservaData.id_servicios);
+      const reservaConServicios = await this.repository.findByIdReserva(reservaData.id_reserva);
+      if (!reservaConServicios) {
+        throw new Error('Reserva no encontrada');
       }
+
+      reservaConServicios.servicios = reservaData.id_servicios.length > 0
+        ? await this.servicioRepository.find({ where: { id_servicio: In(reservaData.id_servicios) } })
+        : [];
+
+      await AppDataSource.getRepository(Reserva).save(reservaConServicios);
     }
 
     return reservaActualizada;
@@ -220,18 +235,15 @@ export class ReservaService {
 
     let precio_servicios = 0;
     if (data.id_servicios && data.id_servicios.length > 0) {
-      const placeholders = data.id_servicios.map(() => '?').join(',');
-      const [rowsServicios] = await pool.query(
-        `SELECT precio_servicio FROM servicio WHERE id_servicio IN (${placeholders})`,
-        data.id_servicios
-      );
-      
-      
-      precio_servicios = (rowsServicios as any[]).reduce((acc, s) => {
+      const servicios = await this.servicioRepository.find({
+        where: { id_servicio: In(data.id_servicios) },
+      });
+
+      precio_servicios = servicios.reduce((acc, s) => {
         const precio = Number(s.precio_servicio) || 0;
         return acc + precio;
       }, 0);
-      
+
       precio_servicios = Number(precio_servicios.toFixed(2));
     }
 
@@ -247,42 +259,42 @@ export class ReservaService {
   }
 
   async agregarServicios(id_reserva: number, id_servicios: number[]): Promise<void> {
-   
+    const reserva = await this.repository.findByIdReserva(id_reserva);
+    if (!reserva) {
+      throw new Error('Reserva no encontrada');
+    }
+
     if (id_servicios.length > 0) {
-      const placeholders = id_servicios.map(() => '?').join(',');
-      const [rowsServicios] = await pool.query(
-        `SELECT precio_servicio FROM servicio WHERE id_servicio IN (${placeholders})`,
-        id_servicios
-      );
-      
-     
-      const sumaServicios = (rowsServicios as any[]).reduce((acc, s) => {
+      const servicios = await this.servicioRepository.find({
+        where: { id_servicio: In(id_servicios) },
+      });
+
+      const sumaServicios = servicios.reduce((acc, s) => {
         const precio = Number(s.precio_servicio) || 0;
         return acc + precio;
       }, 0);
 
-    
-      await pool.query(
-        'UPDATE reserva SET precio_total = precio_total + ? WHERE id_reserva = ?', 
-        [sumaServicios, id_reserva]
-      );
+      reserva.precio_total = Number(reserva.precio_total) + sumaServicios;
+      await AppDataSource.getRepository(Reserva).save(reserva);
     }
 
-    
     return this.repository.addServicios(id_reserva, id_servicios);
   }
 
   async eliminarServicio(id_reserva: number, id_servicio: number) {
-    
-    const [rows] = await pool.query('SELECT precio_servicio FROM servicio WHERE id_servicio = ?', [id_servicio]);
-    const servicios = rows as any[];
-    
-    if (servicios.length > 0) {
-      const servicio = servicios[0];
-      const precio = Number(servicio.precio_servicio) || 0;
+    const [servicio, reserva] = await Promise.all([
+      this.servicioRepository.findOne({ where: { id_servicio } }),
+      this.repository.findByIdReserva(id_reserva),
+    ]);
 
-      // actualizar precio total
-      await pool.query('UPDATE reserva SET precio_total = precio_total - ? WHERE id_reserva = ?', [precio, id_reserva]);
+    if (!reserva) {
+      throw new Error('Reserva no encontrada');
+    }
+
+    if (servicio) {
+      const precio = Number(servicio.precio_servicio) || 0;
+      reserva.precio_total = Math.max(0, Number(reserva.precio_total) - precio);
+      await AppDataSource.getRepository(Reserva).save(reserva);
     }
 
     return this.repository.removeServicio(id_reserva, id_servicio);
@@ -302,52 +314,42 @@ export class ReservaService {
     hora_inicio: string;
     hora_fin: string;
   }): Promise<boolean> {
-    const [reservasExistentes] = await pool.query(
-      `SELECT * FROM reserva 
-       WHERE id_cancha = ? AND fecha = ? 
-       AND (
-         (hora_inicio < ? AND hora_fin > ?) OR
-         (hora_inicio >= ? AND hora_inicio < ?) OR
-         (hora_fin > ? AND hora_fin <= ?)
-       )`,
-      [
-        data.id_cancha, data.fecha,
-        data.hora_fin, data.hora_inicio,
-        data.hora_inicio, data.hora_fin,
-        data.hora_inicio, data.hora_fin
-      ]
-    );
+    const reservasSolapadas = await AppDataSource.getRepository(Reserva)
+      .createQueryBuilder('reserva')
+      .where('reserva.id_cancha = :id_cancha', { id_cancha: data.id_cancha })
+      .andWhere('reserva.fecha = :fecha', { fecha: data.fecha })
+      .andWhere('reserva.hora_inicio < :hora_fin', { hora_fin: data.hora_fin })
+      .andWhere('reserva.hora_fin > :hora_inicio', { hora_inicio: data.hora_inicio })
+      .getCount();
 
-    return (reservasExistentes as any[]).length === 0;
+    return reservasSolapadas === 0;
   }
 
   //  reservas por usuario
   async obtenerPorUsuario(id_usuario: number): Promise<any[]> {
     const reservas = await this.repository.findByUsuario(id_usuario);
-    
-   
+
+    const idsCancha = [...new Set(reservas.map((r) => r.id_cancha))];
+    const canchas = idsCancha.length
+      ? await this.canchaRepository.find({
+          where: { id_cancha: In(idsCancha) },
+          relations: ['localidad', 'tipo_cancha'],
+        })
+      : [];
+
+    const canchasMap = new Map(canchas.map((c) => [c.id_cancha, c]));
+
     const reservasCompletas = await Promise.all(
       reservas.map(async (reserva) => {
         const servicios = await this.repository.findServiciosByReserva(reserva.id_reserva);
-        
-        // infon de la cancha
-        const [canchas] = await pool.query(
-          `SELECT c.nombre, l.nombre as localidad, t.nombre as tipo, t.deporte 
-           FROM cancha c 
-           LEFT JOIN localidad l ON c.id_localidad = l.id_localidad
-           LEFT JOIN tipo_cancha t ON c.id_tipo = t.id_tipo
-           WHERE c.id_cancha = ?`,
-          [reserva.id_cancha]
-        );
-        
-        const cancha = (canchas as any[])[0] || {};
+        const cancha = canchasMap.get(reserva.id_cancha);
         
         return {
           ...reserva,
-          cancha_nombre: cancha.nombre,
-          localidad: cancha.localidad,
-          deporte: cancha.deporte,
-          tipo_cancha: cancha.tipo,
+          cancha_nombre: cancha?.nombre,
+          localidad: cancha?.localidad?.nombre,
+          deporte: cancha?.tipo_cancha?.deporte,
+          tipo_cancha: cancha?.tipo_cancha?.nombre,
           servicios: servicios.map(s => s.nombre)
         };
       })
@@ -358,14 +360,11 @@ export class ReservaService {
 
 //para modificar pagos pendientes
   async puedeModificar(id_reserva: number): Promise<boolean> {
-    // Verificar si existe un pago completado para esta reserva
-    const [pagos] = await pool.query(
-      'SELECT estado FROM pago WHERE id_reserva = ? ORDER BY fecha_creacion DESC LIMIT 1',
-      [id_reserva]
-    );
-    
-    const pago = (pagos as any[])[0];
-    
+    const pago = await this.pagoRepository.findOne({
+      where: { id_reserva },
+      order: { fecha_creacion: 'DESC' },
+    });
+
     // si no hay pago o el pago está pendiente, se puede modificar
     return !pago || pago.estado === 'pendiente';
   }

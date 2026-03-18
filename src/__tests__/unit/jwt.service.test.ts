@@ -1,5 +1,4 @@
 import { JwtService, JwtPayload } from '../../auth/jwt.service.js';
-import { pool } from '../../database/connection.js';
 
 describe('JwtService', () => {
   let jwtService: JwtService;
@@ -96,8 +95,4 @@ describe('JwtService', () => {
       expect(decoded).toBeNull();
     });
   });
-});
-
-afterAll(async () => {
-  await pool.end(); // Cierra la conexión a MySQL al terminar
 });

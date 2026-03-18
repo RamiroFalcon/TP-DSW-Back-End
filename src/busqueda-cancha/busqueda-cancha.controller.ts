@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
 import { BusquedaCanchaService } from './busqueda-cancha.service.js';
 import { CanchaRepository } from '../cancha/cancha.repository.js';
-import { pool } from '../database/connection.js';
-import { RowDataPacket } from 'mysql2';
 
 const canchaRepository = new CanchaRepository();
 const service = new BusquedaCanchaService(canchaRepository);

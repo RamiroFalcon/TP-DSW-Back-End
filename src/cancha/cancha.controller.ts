@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { CanchaService } from './cancha.service.js';
-import { pool } from '../database/connection.js'; // ✅ Agregar esta importación
+import { AppDataSource } from '../database/data-source.js';
+import { Cancha } from './cancha.entity.js';
+import { Reserva } from '../reserva/reserva.entity.js';
+import { In } from 'typeorm';
 
 export class CanchaController {
   constructor(private service: CanchaService) {}
@@ -107,43 +110,52 @@ export class CanchaController {
     
     console.log(`🔍 Buscando disponibilidad - Fecha: ${fecha}, Localidad: ${id_localidad}, Tipo: ${id_tipo}`);
     
-    // 1. Obtener todas las canchas que cumplan con los filtros
-    let query = `
-      SELECT c.*, l.nombre as localidad_nombre, t.nombre as tipo_nombre, t.deporte 
-      FROM cancha c 
-      LEFT JOIN localidad l ON c.id_localidad = l.id_localidad
-      LEFT JOIN tipo_cancha t ON c.id_tipo = t.id_tipo
-      WHERE c.estado = 'disponible'
-    `;
-    
-    const params = [];
-    
+    const canchaRepository = AppDataSource.getRepository(Cancha);
+    const reservaRepository = AppDataSource.getRepository(Reserva);
+
+    const where: {
+      estado: 'disponible';
+      id_localidad?: number;
+      id_tipo?: number;
+    } = {
+      estado: 'disponible',
+    };
+
     if (id_localidad) {
-      query += ' AND c.id_localidad = ?';
-      params.push(id_localidad);
+      where.id_localidad = Number(id_localidad);
     }
-    
+
     if (id_tipo) {
-      query += ' AND c.id_tipo = ?';
-      params.push(id_tipo);
+      where.id_tipo = Number(id_tipo);
     }
-    
-    const [canchas] = await pool.query(query, params);
-    console.log(`🏟️ Canchas encontradas: ${(canchas as any[]).length}`);
+
+    const canchas = await canchaRepository.find({
+      where,
+      relations: ['localidad', 'tipo_cancha'],
+    });
+
+    console.log(`🏟️ Canchas encontradas: ${canchas.length}`);
+
+    const idCanchas = canchas.map((c) => c.id_cancha);
+    const reservas = idCanchas.length
+      ? await reservaRepository.find({
+          where: {
+            id_cancha: In(idCanchas),
+            fecha: String(fecha),
+          },
+          select: ['id_cancha', 'hora_inicio', 'hora_fin'],
+        })
+      : [];
     
     // 2. Para cada cancha, calcular horarios disponibles
     const canchasConDisponibilidad = await Promise.all(
-      (canchas as any[]).map(async (cancha) => {
-        // Obtener reservas existentes para esta cancha en la fecha específica
-        const [reservas] = await pool.query(
-          'SELECT hora_inicio, hora_fin FROM reserva WHERE id_cancha = ? AND fecha = ?',
-          [cancha.id_cancha, fecha]
-        );
-        
-        console.log(` Cancha ${cancha.nombre}: ${(reservas as any[]).length} reservas encontradas`);
+      canchas.map(async (cancha) => {
+        const reservasCancha = reservas.filter((r) => r.id_cancha === cancha.id_cancha);
+
+        console.log(` Cancha ${cancha.nombre}: ${reservasCancha.length} reservas encontradas`);
         
         // 3. Calcular horarios disponibles basados en hora_apertura y hora_cierre
-        const horariosOcupados = (reservas as any[]).map(r => ({
+        const horariosOcupados = reservasCancha.map((r) => ({
           inicio: r.hora_inicio,
           fin: r.hora_fin
         }));
@@ -160,6 +172,9 @@ export class CanchaController {
         
         return {
           ...cancha,
+          localidad_nombre: cancha.localidad?.nombre,
+          tipo_nombre: cancha.tipo_cancha?.nombre,
+          deporte: cancha.tipo_cancha?.deporte,
           horarios_disponibles: horariosDisponibles,
           horarios_ocupados: horariosOcupados,
           total_reservas: horariosOcupados.length

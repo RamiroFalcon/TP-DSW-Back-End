@@ -1,6 +1,5 @@
 import request from 'supertest';
 import { app } from '../../app.js';
-import { pool } from '../../database/connection.js';
 
 describe('Auth Routes', () => {
 
@@ -39,8 +38,4 @@ describe('Auth Routes', () => {
   });
 
 
-});
-
-afterAll(async () => {
-  await pool.end(); // Cierra la conexión a MySQL al terminar
 });

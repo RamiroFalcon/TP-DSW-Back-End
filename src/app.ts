@@ -19,13 +19,15 @@ import busquedaCanchaRouter from './busqueda-cancha/busqueda-cancha.routes.js';
 import { AppDataSource } from './database/data-source.js';
 
 
-AppDataSource.initialize()
-  .then(()=> {
-    console.log('TypeORM conectado a MySQL');
-  })
-  .catch((error) => {
-    console.error('Error al conectar con MySQL:', error);
-  });
+if (process.env.NODE_ENV !== 'test') {
+  AppDataSource.initialize()
+    .then(() => {
+      console.log('TypeORM conectado a MySQL');
+    })
+    .catch((error) => {
+      console.error('Error al conectar con MySQL:', error);
+    });
+}
 
 
 const app = express();

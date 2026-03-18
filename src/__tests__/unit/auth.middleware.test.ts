@@ -1,7 +1,6 @@
 import { Request, NextFunction } from 'express';
 import { authenticateToken, requireAdmin } from '../../auth/auth.middleware.js';
 import { JwtService } from '../../auth/jwt.service.js';
-import { pool } from '../../database/connection.js';
 
 const jwtService = new JwtService();
 
@@ -80,8 +79,4 @@ describe('requireAdmin', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-});
-
-afterAll(async () => {
-  await pool.end(); // Cierra la conexión a MySQL al terminar
 });

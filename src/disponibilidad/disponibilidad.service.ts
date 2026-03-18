@@ -1,9 +1,11 @@
 import { CanchaRepository } from '../cancha/cancha.repository.js';
-import { pool } from '../database/connection.js';
-import { RowDataPacket } from 'mysql2';
 import { DisponibilidadRequest, FranjaHoraria } from '../cancha/cancha.entity.js';
+import { AppDataSource } from '../database/data-source.js';
+import { Reserva } from '../reserva/reserva.entity.js';
 
 export class DisponibilidadService {
+  private reservaRepository = AppDataSource.getRepository(Reserva);
+
   constructor(private canchaRepository: CanchaRepository) {}
 
   async obtenerHorariosDisponibles(datos: DisponibilidadRequest): Promise<FranjaHoraria[]> {
@@ -16,16 +18,13 @@ export class DisponibilidadService {
     }
 
     // 2. Obtener reservas existentes para ese día
-    const [reservasRows] = await pool.query<RowDataPacket[]>(
-      'SELECT id_reserva, hora_inicio, hora_fin FROM reserva WHERE id_cancha = ? AND fecha = ?',
-      [datos.id_cancha, datos.fecha]
-    );
-
-    const reservas = reservasRows as Array<{
-      id_reserva: number;
-      hora_inicio: string;
-      hora_fin: string;
-    }>;
+    const reservas = await this.reservaRepository.find({
+      where: {
+        id_cancha: datos.id_cancha,
+        fecha: datos.fecha,
+      },
+      select: ['id_reserva', 'hora_inicio', 'hora_fin'],
+    });
 
     console.log(`📅 Reservas existentes: ${reservas.length}`);
 
@@ -65,12 +64,14 @@ export class DisponibilidadService {
     hora_inicio: string,
     hora_fin: string
   ): Promise<boolean> {
-    const [reservasRows] = await pool.query<RowDataPacket[]>(
-      'SELECT COUNT(*) as count FROM reserva WHERE id_cancha = ? AND fecha = ? AND ((hora_inicio < ? AND hora_fin > ?) OR (hora_inicio < ? AND hora_fin > ?))',
-      [id_cancha, fecha, hora_fin, hora_inicio, hora_inicio, hora_fin]
-    );
+    const count = await this.reservaRepository
+      .createQueryBuilder('reserva')
+      .where('reserva.id_cancha = :id_cancha', { id_cancha })
+      .andWhere('reserva.fecha = :fecha', { fecha })
+      .andWhere('reserva.hora_inicio < :hora_fin', { hora_fin })
+      .andWhere('reserva.hora_fin > :hora_inicio', { hora_inicio })
+      .getCount();
 
-    const count = (reservasRows[0] as any).count;
     return count === 0;
   }
 
