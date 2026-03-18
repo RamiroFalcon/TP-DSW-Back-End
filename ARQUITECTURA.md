@@ -5,197 +5,176 @@
 2. [Arquitectura en Capas](#arquitectura-en-capas)
 3. [Módulos del Sistema](#módulos-del-sistema)
 4. [Autenticación JWT](#autenticación-jwt)
-5. [Base de Datos](#base-de-datos)
+5. [Persistencia y Base de Datos](#persistencia-y-base-de-datos)
 6. [Testing](#testing)
+7. [Deployment](#deployment)
+8. [Patrones Implementados](#patrones-implementados)
 
 ---
 
 ## Visión General
 
-Sistema de reservas de canchas deportivas construido con:
-- **Node.js + TypeScript + Express** - Backend
-- **MySQL** - Base de datos
-- **JWT + bcrypt** - Autenticación y seguridad
-- **Jest** - Testing
-- **Patrón Repository** - Acceso a datos
+Backend para gestión de reservas de canchas deportivas construido con:
 
-**Principios:** Arquitectura en capas, separación de responsabilidades, código tipado
+- Node.js + TypeScript + Express
+- MySQL
+- TypeORM
+- JWT + bcrypt
+- Jest + Supertest
+
+Principios arquitectónicos:
+
+- Arquitectura en capas
+- Separación de responsabilidades
+- Modelo de dominio tipado
+- Repositorios por módulo
 
 ---
 
 ## Arquitectura en Capas
 
 ```
-Cliente → Routes → Controller → Service → Repository → MySQL
+Cliente -> Routes -> Controller -> Service -> Repository -> TypeORM -> MySQL
 ```
 
-**4 Capas principales:**
+Capas principales:
 
-1. **Routes** - Define endpoints (GET /api/reservas)
-2. **Controller** - Maneja HTTP (req/res, status codes)
-3. **Service** - Lógica de negocio (cálculos, validaciones)
-4. **Repository** - Queries SQL (CRUD)
+1. Routes: define endpoints y conecta middlewares.
+2. Controller: maneja contrato HTTP (request/response).
+3. Service: concentra reglas de negocio.
+4. Repository: encapsula acceso a datos con TypeORM.
 
-**Flujo de ejemplo (Crear Reserva):**
-```typescript
-// 1. Cliente POST /api/reservas con datos
-// 2. Routes aplica middleware de autenticación JWT
-// 3. Controller extrae req.body y llama service
-// 4. Service calcula precio total automáticamente
-// 5. Repository ejecuta INSERT y relaciones
-// 6. Controller retorna 201 con reserva creada
-```
+Flujo ejemplo (crear reserva):
 
-**Ventajas:** Testeable, mantenible, escalable, código organizado
+1. Cliente invoca `POST /api/reservas`.
+2. Route deriva al controller.
+3. Controller delega al service.
+4. Service calcula precio total (cancha + servicios).
+5. Repository persiste reserva y relaciones N:M.
+6. Controller responde 201 con payload final.
 
 ---
 
 ## Módulos del Sistema
 
-El backend tiene 12 módulos principales:
+Módulos principales del dominio:
 
-### 1. Auth (Autenticación)
-- Registro con bcrypt (hash de contraseñas)
-- Login y generación de tokens JWT
-- Middleware: `authenticateToken`, `requireAdmin`, `requireOwnerOrAdmin`
+1. Auth
+- Registro y login con contraseñas hasheadas (bcrypt).
+- Emisión y refresh de JWT.
+- Middlewares: authenticateToken, requireAdmin, requireOwnerOrAdmin.
 
-### 2. Reserva (Sistema de reservas)
-**Lógica clave:** Cálculo automático de precio total
-```
-Precio Total = (Precio/hora × Horas) + Servicios adicionales
-```
-- Busca precio vigente según fecha
-- Calcula duración (hora_fin - hora_inicio)
-- Suma servicios extras (luces, pelota, etc)
+2. Reserva
+- Cálculo automático de precio total.
+- Gestión de servicios asociados.
+- Validaciones de disponibilidad y estado de pago.
 
-### 3. Disponibilidad
-Genera franjas horarias (8:00-9:00, 9:00-10:00...) y marca ocupadas según reservas existentes
-```json
-[
-  {"hora_inicio": "10:00", "hora_fin": "11:00", "disponible": true},
-  {"hora_inicio": "11:00", "hora_fin": "12:00", "disponible": false}
-]
-```
+3. Disponibilidad
+- Generación de franjas horarias por cancha/fecha.
+- Detección de solapamientos con reservas existentes.
 
-### 4. Busqueda Cancha
-Filtra canchas por deporte, localidad y fecha, retornando horarios disponibles de cada una
+4. Búsqueda de Cancha
+- Filtros por deporte, localidad y fecha.
+- Integración con disponibilidad para respuesta enriquecida.
 
-### 5. Usuario
-CRUD de usuarios con roles (cliente/administrador). Endpoints protegidos por JWT
+5. Usuario
+- CRUD con reglas por rol y ownership.
 
-### 6. Cancha, Servicio, Precio, Pago, Localidad, Tipo Cancha
-Módulos CRUD estándar que siguen el patrón Routes→Controller→Service→Repository
+6. Cancha, Servicio, Precio, Pago, Localidad, Tipo Cancha, Reserva-Servicio
+- Operaciones de negocio y mantenimiento de catálogos.
 
 ---
 
 ## Autenticación JWT
 
-### Generación de Token
-```typescript
-// jwt.service.ts
-generateToken(payload: {id_usuario, username, rol}): string
-```
-Token expira en 24h, firmado con `JWT_SECRET`
+Flujo:
 
-### Middleware de Protección
-```typescript
-// authenticateToken - Verifica token válido
-router.get('/perfil', authenticateToken, controller.get);
+1. Usuario envía username y password.
+2. Service valida credenciales con bcrypt.
+3. Si es válido, se genera JWT con payload `{ id_usuario, username, rol }`.
+4. Cliente envía token en `Authorization: Bearer <token>`.
 
-// requireAdmin - Solo administradores
-router.delete('/usuarios/:id', authenticateToken, requireAdmin, controller.delete);
+Middlewares:
 
-// requireOwnerOrAdmin - Dueño o admin
-router.put('/usuarios/:id', authenticateToken, requireOwnerOrAdmin, controller.update);
-```
+- authenticateToken: valida token y carga usuario en request.
+- requireAdmin: restringe endpoints a rol administrador.
+- requireOwnerOrAdmin: permite dueño del recurso o administrador.
 
-### Flujo de Login
-1. Usuario envía username + password
-2. Service busca usuario y compara contraseña con bcrypt
-3. Si es válido, genera JWT y retorna
-4. Cliente guarda token y lo envía en header: `Authorization: Bearer <token>`
+Configuración por entorno:
+
+- `JWT_SECRET`
+- `JWT_EXPIRES_IN`
 
 ---
 
-## Base de Datos
+## Persistencia y Base de Datos
 
-### Conexión MySQL
-```typescript
-// Pool de 10 conexiones reutilizables
-export const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  connectionLimit: 10
-});
+El proyecto utiliza TypeORM como capa de acceso a datos, con MySQL como motor.
+
+Configuración central:
+
+- `src/database/data-source.ts` define `AppDataSource`.
+- `synchronize: false` para evitar cambios automáticos en esquema.
+- Entidades registradas explícitamente en DataSource.
+
+Inicialización de conexión:
+
+- La app inicializa TypeORM al arrancar en modo normal.
+- En `NODE_ENV=test` se evita inicialización automática para no interferir con Jest.
+
+Modelo relacional simplificado:
+
+```
+usuario -> reserva <- cancha
+           |
+           +-> pago
+
+reserva <-> servicio (reserva_servicio)
+cancha -> precio (historial por vigencia)
+cancha -> tipocancha
+cancha -> localidad
 ```
 
-### Modelo Relacional Simplificado
-```
-usuario → reserva ← cancha
-           ↓
-    reserva_servicio ← servicio
-           ↓
-         pago
+Relaciones clave:
 
-cancha → precio (historial)
-cancha → tipo_cancha
-cancha → localidad
-```
-
-**Relaciones clave:**
-- `usuario` 1:N `reserva`
-- `cancha` 1:N `reserva`
-- `reserva` N:M `servicio` (via reserva_servicio)
-- `cancha` 1:N `precio` (vigencia por fecha)
+- usuario 1:N reserva
+- cancha 1:N reserva
+- reserva N:M servicio (tabla intermedia reserva_servicio)
+- cancha 1:N precio
 
 ---
 
 ## Testing
 
-### Configuración Jest
-```javascript
-// jest.config.js
-{
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts']
-}
-```
+Stack:
 
-### Estructura
+- Jest
+- ts-jest
+- Supertest
+
+Estructura:
+
 ```
 src/__tests__/
-├── unit/                    # Tests unitarios
-│   ├── jwt.service.test.ts
-│   └── auth.middleware.test.ts
-└── integration/             # Tests de integración
-    └── auth.routes.test.ts
+  unit/
+    jwt.service.test.ts
+    auth.middleware.test.ts
+  integration/
+    auth.routes.test.ts
 ```
 
-### Ejemplo Test Unitario
-```typescript
-describe('JwtService', () => {
-  test('debe generar token válido', () => {
-    const token = jwtService.generateToken(payload);
-    expect(token.split('.')).toHaveLength(3);
-  });
-});
-```
+Notas:
 
-### Ejecutar Tests
-```bash
-pnpm test              # Todos los tests
-pnpm test:coverage     # Con cobertura
-pnpm test:watch        # Modo watch
-```
+- Setup global en `src/__tests__/setup.ts`.
+- Pruebas actuales validan autenticación, middlewares y rutas base de auth.
+- La suite se ejecuta sin pool MySQL manual, alineada con uso de TypeORM.
 
 ---
 
 ## Deployment
 
-### Variables de Entorno (.env)
+Variables mínimas:
+
 ```env
 DB_HOST=localhost
 DB_PORT=3306
@@ -206,81 +185,52 @@ DB_NAME=tp
 JWT_SECRET=clave_secreta_segura
 JWT_EXPIRES_IN=24h
 
-PORT=3000
 NODE_ENV=production
 ```
 
-### Opciones de Deploy
+Build y ejecución:
 
-**1. VPS/Servidor**
 ```bash
-git clone repo
 pnpm install --production
 pnpm build
-pm2 start dist/app.js
+pnpm start
 ```
 
-**2. Docker**
-```yaml
-# docker-compose.yml
-services:
-  backend:
-    build: .
-    ports: ["3000:3000"]
-    depends_on: [mysql]
-  mysql:
-    image: mysql:8.0
-    volumes: [./docs/mysql-commands.sql:/docker-entrypoint-initdb.d/init.sql]
-```
+Recomendaciones para producción:
 
-**3. Cloud (Railway/Render/Heroku)**
-- Conectar repo GitHub
-- Configurar variables de entorno
-- Deploy automático en cada push
-
-### Consideraciones Producción
-- Usar `JWT_SECRET` fuerte y único
-- HTTPS obligatorio
-- CORS restrictivo (no `*`)
-- Rate limiting en endpoints públicos
-- Logs estructurados
-- Backups diarios de MySQL
+- JWT secret robusto y rotación planificada.
+- HTTPS obligatorio.
+- CORS con orígenes explícitos.
+- Rate limiting en endpoints públicos.
+- Observabilidad y logging estructurado.
+- Backups automáticos de MySQL.
 
 ---
 
 ## Patrones Implementados
 
-**Repository Pattern** - Centraliza SQL en repositorios
-```typescript
-class CanchaRepository {
-  async findAll(): Promise<Cancha[]> {
-    const [rows] = await pool.query('SELECT * FROM cancha');
-    return rows as Cancha[];
-  }
-}
-```
+Repository Pattern:
 
-**DTO Pattern** - Diferentes interfaces según operación
-```typescript
-interface CanchaCreate { ... }   // Para crear (sin ID)
-interface CanchaUpdate { ... }   // Para actualizar (todo opcional)
-```
+- Cada módulo encapsula su acceso a datos en repositorios TypeORM.
+- Services no dependen de SQL embebido.
 
-**Dependency Injection** - Inyectar dependencias por constructor
-```typescript
-class ReservaService {
-  constructor(private repository: ReservaRepository) {}
-}
-```
+DTO/Interfaces por caso de uso:
+
+- Entidades y contratos de creación/actualización separados.
+
+Dependency Injection simple:
+
+- Services reciben repositorios por constructor o inicialización controlada.
 
 ---
 
 ## Conclusión
 
-Arquitectura sólida en capas que separa responsabilidades claramente. Usa autenticación JWT, cálculo automático de precios, consulta de disponibilidad en tiempo real, y está preparada para escalar agregando nuevos módulos o migrando a TypeORM.
+La arquitectura actual mantiene una estructura en capas clara, con autenticación JWT, lógica de reservas centralizada y persistencia homogénea con TypeORM. El diseño favorece mantenibilidad, pruebas y evolución incremental del dominio.
 
-**Documentación relacionada:**
-- [README.md](README.md) - Guía de instalación y uso
-- [docs/JWT-IMPLEMENTATION.md](docs/JWT-IMPLEMENTATION.md) - Detalles de autenticación
-- [docs/mysql-commands.sql](docs/mysql-commands.sql) - Schema de base de datos
+Documentación relacionada:
+
+- [README.md](README.md)
+- [docs/JWT-IMPLEMENTATION.md](docs/JWT-IMPLEMENTATION.md)
+- [docs/mysql-commands.sql](docs/mysql-commands.sql)
 
